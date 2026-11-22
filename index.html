@@ -645,7 +645,7 @@ function calc() {
   apply(n?.mods, n?.name);
   if (n?.stages) apply(n.stages.find(s => s.n === state.stage)?.mods, n?.name);
   state.passives.forEach(p => apply(byName(PASSIVES, p)?.mods, p));
-  state.minors.slice(0, freeMinors()).forEach(id => id && apply(byName(MINORS, id)?.mods));
+  state.minors.slice(0, freeMinors()).forEach(id => id && apply(MINORS.find(m => m.id === id)?.mods));
   activeSecrets().forEach(s => apply(s.mods));
   const out = {};
   Object.keys(BASE).forEach(k => out[k] = (BASE[k] + acc[k].flat) * acc[k].mult);
