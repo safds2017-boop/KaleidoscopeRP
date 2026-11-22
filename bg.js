@@ -74,7 +74,7 @@
   state.from = state.colors.map(c => c.slice());
   state.to = state.colors.map(c => c.slice());
 
-  const seed = [Math.random() * 60, Math.random() * 60];
+  const seed = [Math.random() * 12, Math.random() * 12];
   const sectors = 7 + Math.floor(Math.random() * 8);
   const rot = Math.random() * Math.PI * 2;
   const zoom = 0.75 + Math.random() * 0.6;
@@ -135,11 +135,6 @@
       void main(){ gl_Position = vec4(a, 0.0, 1.0); }
     `;
     const FS = `
-      #ifdef GL_FRAGMENT_PRECISION_HIGH
-      precision highp float;
-      #else
-      precision mediump float;
-      #endif
       uniform vec2 uRes;
       uniform float uTime;
       uniform vec3 uC1;
@@ -151,9 +146,9 @@
       uniform float uZoom;
 
       float h21(vec2 p){
-        p = fract(p * vec2(234.34, 435.345));
-        p += dot(p, p + 34.23);
-        return fract(p.x * p.y);
+        vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+        p3 += dot(p3, p3.yzx + 33.33);
+        return fract((p3.x + p3.y) * p3.z);
       }
       float vn(vec2 p){
         vec2 i = floor(p);
@@ -205,19 +200,20 @@
       }
     `;
 
-    function shader(type, src) {
+    function shader(type, src, quiet) {
       const s = gl.createShader(type);
       gl.shaderSource(s, src);
       gl.compileShader(s);
       if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        console.error(gl.getShaderInfoLog(s));
+        if (!quiet) console.error(gl.getShaderInfoLog(s));
         return null;
       }
       return s;
     }
 
     const vs = shader(gl.VERTEX_SHADER, VS);
-    const fs = shader(gl.FRAGMENT_SHADER, FS);
+    const fs = shader(gl.FRAGMENT_SHADER, 'precision highp float;\n' + FS)
+      || shader(gl.FRAGMENT_SHADER, 'precision mediump float;\n' + FS, true);
     if (!vs || !fs) { init2D(); return; }
 
     const prog = gl.createProgram();
