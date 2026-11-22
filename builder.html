@@ -11,7 +11,8 @@
   --bg:#0e1116;--panel:#161b22;--panel2:#1b2230;--line:#2a3242;
   --txt:#e6edf3;--mut:#8b98ab;--acc:#7ee787;--acc2:#58a6ff;--bad:#ff7b72;--star:#ffd166;
 }
-html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+html{margin:0;background:var(--bg)}
+body{margin:0;background:transparent;color:var(--txt);font:15px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 .wrap{max-width:1240px;margin:0 auto;padding:0 18px}
 .top{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#141b26,#0e1116);padding:26px 0 20px}
 h1{margin:0 0 6px;font-size:26px;letter-spacing:.2px}
@@ -908,5 +909,6 @@ initSlugs();
 load();
 update();
 </script>
+<script src="bg.js" defer></script>
 </body>
 </html>
