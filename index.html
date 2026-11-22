@@ -337,6 +337,7 @@ function struckLines(name) {
 }
 
 const SECRET_TONE = { 1: '#6ee7a0', 2: '#f2d06b', 3: '#ff9b9b' };
+const blockedActives = () => new Set(activeSecrets().flatMap(s => s.blocks || []));
 function secretMark(name) {
   const hits = activeSecrets().filter(s =>
     s.combo.some(c => c.name === name) || (s.strikes || []).some(st => st.ability === name)
@@ -527,6 +528,7 @@ function renderActives() {
   const q = $('#activeSearch').value.trim().toLowerCase();
   const match = a => !q || a.name.toLowerCase().includes(q) || a.desc.toLowerCase().includes(q);
   const r = rules();
+  const blocked = blockedActives();
 
   const sp = $('#spellPane');
   sp.textContent = '';
@@ -541,7 +543,7 @@ function renderActives() {
     g.className = 'grid';
     items.forEach(s => g.append(makeCard({
       title: s.name, desc: s.desc, img: s.gif, sel: state.actives.includes(s.name),
-      off: r.noSpells, onClick: () => toggleActive(s.name)
+      off: r.noSpells || blocked.has(s.name), onClick: () => toggleActive(s.name)
     })));
     sp.append(g);
   });
@@ -560,7 +562,7 @@ function renderActives() {
     g.className = 'grid';
     items.forEach(m => g.append(makeCard({
       title: m.name, desc: m.desc, img: m.gif, sel: state.actives.includes(m.name),
-      onClick: () => toggleActive(m.name)
+      off: blocked.has(m.name), onClick: () => toggleActive(m.name)
     })));
     mp.append(g);
   } else {
@@ -578,6 +580,7 @@ function renderActives() {
 function toggleActive(name) {
   const i = state.actives.indexOf(name);
   if (i >= 0) { state.actives.splice(i, 1); update(); return; }
+  if (blockedActives().has(name)) { toast('Эта способность недоступна с активной секреткой'); return; }
   const r = rules();
   if (KIND[name] === 'spell' && r.noSpells) { toast(r.msg); return; }
   if (state.actives.length >= maxAct()) { toast('Максимум ' + maxAct() + ' активных способностей'); return; }
@@ -800,6 +803,11 @@ function closeSecretModal() {
 }
 
 function update() {
+  const blocked = blockedActives();
+  if (state.actives.some(a => blocked.has(a))) {
+    state.actives = state.actives.filter(a => !blocked.has(a));
+    toast('Способность недоступна с активной секреткой');
+  }
   renderSizes();
   renderNatures();
   renderPassives();
