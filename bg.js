@@ -56,7 +56,7 @@
   canvas.setAttribute('aria-hidden', 'true');
   Object.assign(canvas.style, {
     position: 'fixed', inset: '0', width: '100%', height: '100vh',
-    display: 'block', zIndex: '-1', pointerEvents: 'none', opacity: '.62'
+    display: 'block', zIndex: '-1', pointerEvents: 'none', opacity: '.55'
   });
   document.body.insertBefore(canvas, document.body.firstChild);
   document.documentElement.classList.add('bg-live');
@@ -194,18 +194,14 @@
         n += 0.05 * sin(rr * 22.0 - t * 0.35);
         n = clamp(n, 0.0, 1.0);
 
-        float nb = mix(floor(n * 12.0) / 12.0, n, 0.45);
-        vec3 col = mix(uC1 * 0.5, uC1, smoothstep(0.0, 0.28, nb));
-        col = mix(col, uC2, smoothstep(0.22, 0.58, nb));
-        col = mix(col, uC3, smoothstep(0.52, 0.94, nb));
-        col *= 0.86 + 0.18 * sin(n * 8.0 + rr * 2.0);
+        vec3 col = mix(uC1 * 0.6, uC1, smoothstep(0.0, 0.42, n));
+        col = mix(col, uC2, smoothstep(0.12, 0.72, n));
+        col = mix(col, uC3, smoothstep(0.42, 1.0, n));
+        col *= 0.95 + 0.06 * sin(n * 5.0 + rr * 1.5);
 
-        float edge = smoothstep(0.46, 0.5, abs(fract(n * 8.0) - 0.5));
-        col = mix(col, vec3(0.9), edge * 0.06);
-
-        float alpha = smoothstep(0.28, 0.44, n) * 0.85;
-        alpha *= smoothstep(1.4, 0.55, r);
-        gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0) * 0.6);
+        float alpha = smoothstep(0.1, 0.72, n) * 0.75;
+        alpha *= smoothstep(1.4, 0.5, r);
+        gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0) * 0.5);
       }
     `;
 
@@ -271,7 +267,8 @@
       const ch = canvas.clientHeight;
       if (!force && Math.abs(cw - lastW) < 2 && Math.abs(ch - lastH) < 140) return;
       lastW = cw; lastH = ch;
-      const dpr = Math.min(devicePixelRatio || 1, 1.5);
+      const budget = 1.4e6;
+      const dpr = Math.max(1, Math.min(devicePixelRatio || 1, 2.5, Math.sqrt(budget / (cw * ch))));
       const w = Math.max(1, Math.round(cw * dpr));
       const h = Math.max(1, Math.round(ch * dpr));
       if (canvas.width !== w || canvas.height !== h) {
