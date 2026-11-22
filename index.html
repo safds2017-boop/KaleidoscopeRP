@@ -274,17 +274,23 @@ function decodeState(hash) {
 
 const natureObj = () => byName(NATURES, state.nature);
 function rules() {
-  const out = { maxActives: 2, noSpells: false, msg: '' };
-  const list = [natureObj()?.rule, ...state.passives.map(p => byName(PASSIVES, p)?.rule)].filter(Boolean);
+  const out = { maxActives: 2, maxMinors: null, noSpells: false, noActives: false, msg: '' };
+  const list = [
+    natureObj()?.rule,
+    ...state.passives.filter(p => !wholeNeutralized(p)).map(p => byName(PASSIVES, p)?.rule),
+    ...activeSecrets().map(s => s.rule)
+  ].filter(Boolean);
   list.forEach(r => {
     if (r.maxActives != null) out.maxActives = Math.min(out.maxActives, r.maxActives);
+    if (r.maxMinors != null) out.maxMinors = Math.max(out.maxMinors ?? 0, r.maxMinors);
     if (r.noSpells) out.noSpells = true;
+    if (r.noActives) { out.noActives = true; out.maxActives = 0; }
     if (r.msg) out.msg = r.msg;
   });
   return out;
 }
 const maxAct = () => rules().maxActives;
-const freeMinors = () => Math.max(0, maxAct() - state.actives.length);
+const freeMinors = () => { const r = rules(); return Math.max(0, (r.maxMinors ?? r.maxActives) - state.actives.length); };
 const isSecretMatched = secret => secret.combo.every(c =>
   c.type === 'size' ? state.size === c.name :
   c.type === 'nature' ? state.nature === c.name :
@@ -338,6 +344,7 @@ function struckLines(name) {
 
 const SECRET_TONE = { 1: '#6ee7a0', 2: '#f2d06b', 3: '#ff9b9b' };
 const blockedActives = () => new Set(activeSecrets().flatMap(s => s.blocks || []));
+const wholeNeutralized = name => activeSecrets().some(s => (s.strikes || []).some(st => st.ability === name && st.whole));
 function secretMark(name) {
   const hits = activeSecrets().filter(s =>
     s.combo.some(c => c.name === name) || (s.strikes || []).some(st => st.ability === name)
@@ -543,7 +550,7 @@ function renderActives() {
     g.className = 'grid';
     items.forEach(s => g.append(makeCard({
       title: s.name, desc: s.desc, img: s.gif, sel: state.actives.includes(s.name),
-      off: r.noSpells || blocked.has(s.name), onClick: () => toggleActive(s.name)
+      off: r.noActives || r.noSpells || blocked.has(s.name), onClick: () => toggleActive(s.name)
     })));
     sp.append(g);
   });
@@ -562,7 +569,7 @@ function renderActives() {
     g.className = 'grid';
     items.forEach(m => g.append(makeCard({
       title: m.name, desc: m.desc, img: m.gif, sel: state.actives.includes(m.name),
-      off: blocked.has(m.name), onClick: () => toggleActive(m.name)
+      off: r.noActives || blocked.has(m.name), onClick: () => toggleActive(m.name)
     })));
     mp.append(g);
   } else {
@@ -582,6 +589,7 @@ function toggleActive(name) {
   if (i >= 0) { state.actives.splice(i, 1); update(); return; }
   if (blockedActives().has(name)) { toast('Эта способность недоступна с активной секреткой'); return; }
   const r = rules();
+  if (r.noActives) { toast('Чародей: активные способности недоступны'); return; }
   if (KIND[name] === 'spell' && r.noSpells) { toast(r.msg); return; }
   if (state.actives.length >= maxAct()) { toast('Максимум ' + maxAct() + ' активных способностей'); return; }
   state.actives.push(name);
@@ -807,6 +815,10 @@ function update() {
   if (state.actives.some(a => blocked.has(a))) {
     state.actives = state.actives.filter(a => !blocked.has(a));
     toast('Способность недоступна с активной секреткой');
+  }
+  if (rules().noActives && state.actives.length) {
+    state.actives = [];
+    toast('Чародей: активные способности недоступны');
   }
   renderSizes();
   renderNatures();

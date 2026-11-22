@@ -739,7 +739,8 @@ const SECRETS = [
       { type: 'passive', name: 'Магическое естество' }
     ],
     effect: 'Магическое естество на 7 заклинаний. Активных способностей нет — только минорные усиления.',
-    strikes: [{ ability: 'Магическое естество', whole: true }]
+    strikes: [{ ability: 'Магическое естество', whole: true }],
+    rule: { noActives: true, maxMinors: 2 }
   },
   {
     name: 'Легенда о Карпе',
