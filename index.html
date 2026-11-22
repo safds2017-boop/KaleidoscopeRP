@@ -34,6 +34,12 @@ h2{font-size:18px;margin:0}
 .card .name{font-weight:600;display:flex;gap:8px;justify-content:space-between;align-items:baseline}
 .stars{color:var(--star);font-size:12px;white-space:nowrap;letter-spacing:1px}
 .desc{margin:6px 0 0;font-size:13px;color:#c3cddb}
+.desc s{color:#7d8798;text-decoration-thickness:1px}
+.secret-cut,.modal-cut{margin:8px 0 0;font-size:13px;color:var(--mut)}
+.cut-head{font-weight:600;margin-bottom:3px}
+.cut-row{margin:2px 0}
+.cut-name{margin-right:3px}
+.cut-row s{color:#8b95a5}
 .card img{width:100%;border-radius:8px;margin-top:8px;display:block}
 .side{position:sticky;top:16px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
@@ -272,7 +278,44 @@ const isSecretMatched = secret => secret.combo.every(c =>
   c.type === 'nature' ? state.nature === c.name :
   state.passives.includes(c.name)
 );
-const activeSecrets = () => SECRETS.filter(isSecretMatched);
+const SECRET_DATA = typeof SECRETS === 'undefined' ? [] : SECRETS;
+const activeSecrets = () => SECRET_DATA.filter(isSecretMatched);
+
+const textOf = item => item.desc || (item.lines || []).map(l => l.text).join(' ');
+const allItems = () => [...SIZES, ...NATURES, ...PASSIVES, ...SPELLS, ...MISC];
+const lineText = (ability, id) => allItems().find(a => a.name === ability)?.lines?.find(l => l.id === id)?.text || '';
+const CUT_COLORS = ['#e8a33d', '#6cb6ff'];
+function buildStrikeBlock(s, cls) {
+  const box = document.createElement('div');
+  box.className = cls;
+  const head = document.createElement('div');
+  head.className = 'cut-head';
+  head.textContent = 'Нейтрализовано:';
+  box.append(head);
+  s.strikes.forEach((st, i) => {
+    const row = document.createElement('div');
+    row.className = 'cut-row';
+    const name = document.createElement('b');
+    name.className = 'cut-name';
+    name.style.color = CUT_COLORS[i % CUT_COLORS.length];
+    name.textContent = st.ability + ':';
+    row.append(name);
+    st.lines.forEach(id => {
+      const sEl = document.createElement('s');
+      sEl.textContent = lineText(st.ability, id);
+      row.append(' ', sEl);
+    });
+    box.append(row);
+  });
+  return box;
+}
+function struckLines(name) {
+  const set = new Set();
+  activeSecrets().forEach(s => (s.strikes || []).forEach(st => {
+    if (st.ability === name) st.lines.forEach(id => set.add(id));
+  }));
+  return set;
+}
 
 function toast(msg) {
   const t = $('#toast');
@@ -282,7 +325,7 @@ function toast(msg) {
   toast.timer = setTimeout(() => t.classList.remove('on'), 2400);
 }
 
-function makeCard({ title, sub, desc, img, sel, off, onClick }) {
+function makeCard({ title, sub, desc, lines, struck, img, sel, off, onClick }) {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'card' + (sel ? ' sel' : '') + (off ? ' off' : '');
@@ -298,10 +341,23 @@ function makeCard({ title, sub, desc, img, sel, off, onClick }) {
     n.append(s);
   }
   b.append(n);
-  if (desc) {
+  if (lines || desc) {
     const p = document.createElement('p');
     p.className = 'desc';
-    p.textContent = desc;
+    if (lines) {
+      lines.forEach((l, i) => {
+        if (i) p.append(' ');
+        if (struck?.has(l.id)) {
+          const s = document.createElement('s');
+          s.textContent = l.text;
+          p.append(s);
+        } else {
+          p.append(l.text);
+        }
+      });
+    } else {
+      p.textContent = desc;
+    }
     b.append(p);
   }
   if (img) {
@@ -378,9 +434,9 @@ function renderPassives() {
   const g = $('#passiveGrid');
   g.textContent = '';
   PASSIVES
-    .filter(p => !q || p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q))
+    .filter(p => !q || p.name.toLowerCase().includes(q) || textOf(p).toLowerCase().includes(q))
     .forEach(p => g.append(makeCard({
-      title: p.name, sub: '★'.repeat(p.stars), desc: p.desc, img: p.gif,
+      title: p.name, sub: '★'.repeat(p.stars), desc: p.desc, lines: p.lines, struck: struckLines(p.name), img: p.gif,
       sel: state.passives.includes(p.name),
       onClick: () => togglePassive(p)
     })));
@@ -504,7 +560,12 @@ function renderMinors() {
 function calc() {
   const acc = {};
   Object.keys(BASE).forEach(k => acc[k] = { flat: 0, mult: 1 });
-  const apply = mods => (mods || []).forEach(m => {
+  const struck = new Set();
+  activeSecrets().forEach(s => (s.strikes || []).forEach(st =>
+    st.lines.forEach(id => struck.add(st.ability + '#' + id))
+  ));
+  const apply = (mods, src) => (mods || []).forEach(m => {
+    if (src && m.id && struck.has(src + '#' + m.id)) return;
     const t = acc[m.ch];
     if (!t) return;
     if (m.flat) t.flat += m.flat;
@@ -514,7 +575,7 @@ function calc() {
   const n = natureObj();
   apply(n?.mods);
   if (n?.stages) apply(n.stages.find(s => s.n === state.stage)?.mods);
-  state.passives.forEach(p => apply(byName(PASSIVES, p)?.mods));
+  state.passives.forEach(p => apply(byName(PASSIVES, p)?.mods, p));
   state.minors.slice(0, freeMinors()).forEach(id => id && apply(byName(MINORS, id)?.mods));
   activeSecrets().forEach(s => apply(s.mods));
   const out = {};
@@ -617,6 +678,9 @@ function renderSecrets() {
     const eff = document.createElement('p');
     eff.textContent = s.effect;
     body.append(combo, eff);
+    if (s.strikes?.length) {
+      body.append(buildStrikeBlock(s, 'secret-cut'));
+    }
     if (s.mods?.length) {
       const mod = document.createElement('p');
       mod.className = 'secret-mod';
@@ -656,6 +720,9 @@ function showSecretModal(list) {
     eff.className = 'modal-effect';
     eff.textContent = s.effect;
     body.append(h, combo, eff);
+    if (s.strikes?.length) {
+      body.append(buildStrikeBlock(s, 'modal-cut'));
+    }
   });
   $('#modal').hidden = false;
   document.body.classList.add('locked');
