@@ -3,898 +3,99 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Конструктор ориджинов</title>
-<style>
-*{box-sizing:border-box}
-:root{
-  --bg:#0e1116;--panel:#161b22;--panel2:#1b2230;--line:#2a3242;
-  --txt:#e6edf3;--mut:#8b98ab;--acc:#7ee787;--acc2:#58a6ff;--bad:#ff7b72;--star:#ffd166;
-}
-html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-.wrap{max-width:1240px;margin:0 auto;padding:0 18px}
-.top{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#141b26,#0e1116);padding:26px 0 20px}
-h1{margin:0 0 6px;font-size:26px;letter-spacing:.2px}
-.lead{margin:0;color:var(--mut);max-width:660px}
-.top-actions{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
-.btn{font:inherit;font-size:13px;padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);cursor:pointer}
-.btn:hover{border-color:#3b475c}
-.btn.ghost{background:transparent;color:var(--mut)}
-.layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:26px;padding:24px 18px 70px;align-items:start}
-.block{margin-bottom:30px}
-.block-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-h2{font-size:18px;margin:0}
-.count{font-size:12px;color:var(--mut);border:1px solid var(--line);border-radius:20px;padding:2px 9px;background:var(--panel);white-space:nowrap}
-.count.ok{color:var(--acc);border-color:rgba(126,231,135,.45)}
-.hint{margin:6px 0 12px;color:var(--mut);font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
-.card{text-align:left;appearance:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 13px;color:inherit;font:inherit;cursor:pointer;transition:border-color .12s,transform .12s,background .12s}
-.card:hover{border-color:#3b475c;transform:translateY(-1px)}
-.card.sel{border-color:#4a86e0;background:#1a202b;box-shadow:0 0 0 1px #4a86e0 inset}
-.card.sec-1{color:#7ee2a8}
-.card.sec-2{color:#f2d06b}
-.card.sec-3{color:#ff9b9b}
-.card.sec-1 .desc,.card.sec-2 .desc,.card.sec-3 .desc{color:inherit}
-.card.sel.sec-1{border-color:#4ade80;background:#12211a;box-shadow:0 0 0 1px #4ade80 inset}
-.card.sel.sec-2{border-color:#e0c04a;background:#211d10;box-shadow:0 0 0 1px #e0c04a inset}
-.card.sel.sec-3{border-color:#e06060;background:#241416;box-shadow:0 0 0 1px #e06060 inset}
-.card.sec-multi{color:transparent;border:2px solid transparent;background:linear-gradient(var(--panel),var(--panel)) padding-box,var(--g) border-box}
-.card.sel.sec-multi{border-color:transparent;background:linear-gradient(#1a202b,#1a202b) padding-box,var(--g) border-box;box-shadow:none}
-.card.sec-multi .name span:first-child{color:transparent;background-image:var(--g);-webkit-background-clip:text;background-clip:text}
-.card.sec-multi .desc{color:transparent;background-image:var(--g);-webkit-background-clip:text;background-clip:text}
-.card.off{opacity:.35}
-.card .name{font-weight:600;display:flex;gap:8px;justify-content:space-between;align-items:baseline}
-.stars{color:var(--star);font-size:12px;white-space:nowrap;letter-spacing:1px}
-.desc{margin:6px 0 0;font-size:13px;color:#c3cddb}
-.desc s{color:#7d8798;text-decoration-thickness:1px}
-.secret-cut,.modal-cut{margin:8px 0 0;font-size:13px;color:var(--mut)}
-.cut-head{font-weight:600;margin-bottom:3px}
-.cut-row{margin:2px 0}
-.cut-name{margin-right:3px}
-.cut-whole{color:var(--mut);font-size:12px}
-.cut-row s{color:#8b95a5}
-.card img{width:100%;border-radius:8px;margin-top:8px;display:block}
-.side{position:sticky;top:16px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
-.panel h2{font-size:17px;margin-bottom:8px}
-.chk{display:grid;gap:6px;font-size:13px;margin:0 0 14px}
-.chk div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #232b3a;padding-bottom:5px}
-.chk .v{color:var(--mut);text-align:right}
-.chk .v.ok{color:var(--acc)}
-.chk .v.bad{color:var(--bad)}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;font-size:13px}
-.stat{display:flex;justify-content:space-between;gap:6px;padding:4px 0;border-bottom:1px solid #1c232f}
-.stat b{font-weight:600;font-variant-numeric:tabular-nums}
-.up{color:var(--acc)}
-.down{color:var(--bad)}
-.note{font-size:12px;color:var(--mut);margin:12px 0 0}
-.search{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:inherit;font:inherit;margin-bottom:12px}
-.search::placeholder{color:#5f6b7e}
-.tabs{display:flex;gap:6px;margin-bottom:12px}
-.tab{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 13px;color:var(--mut);font:inherit;font-size:13px;cursor:pointer}
-.tab.on{color:var(--txt);border-color:var(--acc);background:#15221b}
-.school{margin:16px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
-.school:first-child{margin-top:0}
-.minors{display:grid;gap:10px}
-.minor{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;flex-wrap:wrap}
-.minor span{color:var(--mut)}
-.minor select{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--line);color:inherit;border-radius:8px;padding:7px 9px;font:inherit;font-size:13px}
-.stages{margin-top:10px}
-.stage-row{display:flex;gap:6px;flex-wrap:wrap}
-.stage{font:inherit;font-size:12px;padding:7px 11px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--mut);cursor:pointer}
-.stage.on{color:var(--txt);border-color:var(--acc);background:#15221b}
-.stage-desc{margin:8px 0 0;font-size:12px;color:var(--mut)}
-.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#233042;border:1px solid #3b4b64;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;max-width:90vw;text-align:center}
-.toast.on{opacity:1;transform:translateX(-50%)}
-.empty{color:var(--mut);font-size:13px}
-.secrets-block{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
-.sub-head{display:flex;align-items:center;gap:8px;font-size:16px;margin:0 0 10px}
-.secret{border:1px solid #3a2f4a;border-radius:10px;background:#1a1722;margin-bottom:8px;padding:8px 10px}
-.secret summary{cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:600;list-style:none}
-.secret summary::-webkit-details-marker{display:none}
-.secret-body{font-size:12px;color:#c3cddb;margin-top:8px}
-.secret-body p{margin:0 0 6px}
-.secret-body p:last-child{margin-bottom:0}
-.secret-combo{color:var(--mut)}
-.secret-mod{color:var(--acc)}
-.modal{position:fixed;inset:0;background:rgba(5,7,10,.72);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
-.modal[hidden]{display:none}
-.modal-card{background:var(--panel);border:1px solid #3a2f4a;border-radius:16px;padding:20px;max-width:620px;width:100%;max-height:82vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.55)}
-.modal-title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c792ea;margin-bottom:12px}
-.modal-card h3{margin:0 0 4px;font-size:20px}
-.modal-card h3 + .modal-combo{margin-top:0}
-.modal-combo{color:var(--mut);font-size:13px;margin:0 0 8px}
-.modal-effect{font-size:14px;color:#d7dee9;margin:0 0 16px}
-.modal-effect:last-child{margin-bottom:0}
-.modal-card .btn{width:100%;margin-top:6px}
-body.locked{overflow:hidden}
-@media(max-width:980px){.layout{grid-template-columns:1fr}.side{position:static}}
-</style>
+<title>Kaleidoscope RP — Minecraft-сервер с ролевой игрой</title>
+<meta name="description" content="Kaleidoscope RP — Minecraft-сервер с уклоном в ролевую игру и выживание. Остров Меланта, средневековое фэнтези и конструктор ориджинов.">
+<link rel="stylesheet" href="site.css">
 </head>
 <body>
-<header class="top">
-  <div class="wrap">
-    <h1>Конструктор ориджинов</h1>
-    <p class="lead">Размер, естество, три пассивки и две активки. Характеристики считаются автоматически: проценты складываются в прогрессии, как на сервере.</p>
-    <div class="top-actions">
-      <button class="btn" id="share">Скопировать ссылку</button>
-      <button class="btn ghost" id="resetBtn">Сбросить</button>
-    </div>
+<header class="site-nav">
+  <div class="inner">
+    <a class="site-logo" href="index.html">Kaleidoscope <b>RP</b></a>
+    <nav class="site-links">
+      <a href="index.html" class="on">Главная</a>
+      <a href="builder.html">Конструктор</a>
+      <a href="lore.html">Лор</a>
+      <a href="gameplay.html">Геймплей</a>
+    </nav>
   </div>
 </header>
 
-<main class="wrap layout">
-  <div class="col">
-    <section class="block">
-      <div class="block-head"><h2>Размер</h2><span class="count" id="sizeCount">0/1</span></div>
-      <p class="hint">Можно выбрать только один. Звуки и постоянные партикли обсуждаются с администратором отдельно.</p>
-      <div class="grid" id="sizeGrid"></div>
-    </section>
-
-    <section class="block">
-      <div class="block-head"><h2>Естество</h2><span class="count" id="natureCount">0/1</span></div>
-      <p class="hint">Можно выбрать только одно. Выбирай с умом.</p>
-      <div class="grid" id="natureGrid"></div>
-      <div class="stages" id="stages"></div>
-    </section>
-
-    <section class="block">
-      <div class="block-head"><h2>Пассивные умения</h2><span class="count" id="passiveCount">0/3</span></div>
-      <p class="hint">Выбери три. ★ — насколько сильно способность меняет игру. Выбор должен быть обоснован персонажем.</p>
-      <input class="search" id="passiveSearch" placeholder="Поиск по пассивкам">
-      <div class="grid" id="passiveGrid"></div>
-    </section>
-
-    <section class="block">
-      <div class="block-head"><h2>Активные умения</h2><span class="count" id="activeCount">0/2</span></div>
-      <p class="hint">Выбери два. Заклинание занимает отдельный слот; перезарядка и сила согласуются с админом. У способностей с обводкой и партиклями цвет меняется красителем.</p>
-      <div class="tabs">
-        <button class="tab on" data-tab="spell">Заклинания Iron's Spellbooks</button>
-        <button class="tab" data-tab="misc">Иные способности</button>
-      </div>
-      <input class="search" id="activeSearch" placeholder="Поиск по активкам">
-      <div id="spellPane"></div>
-      <div id="miscPane" hidden></div>
-    </section>
-
-    <section class="block">
-      <div class="block-head"><h2>Минорные усиления</h2><span class="count" id="minorCount">0/2</span></div>
-      <p class="hint">За каждый неиспользованный слот активки — одно усиление или предмет по договорённости.</p>
-      <div class="minors" id="minorSlots"></div>
-    </section>
-  </div>
-
-  <aside class="col side">
-    <div class="panel">
-      <h2>Итог</h2>
-      <div class="chk" id="checklist"></div>
-      <div class="stats" id="stats"></div>
-      <div class="secrets-block">
-        <h2 class="sub-head">Секретки <span class="count" id="secretCount">0</span></h2>
-        <div id="secrets"></div>
-      </div>
-      <p class="note">Условные эффекты (день и ночь, панцирь, перегрев, мокрый, стадии) в цифры не входят — они в описаниях. Плоские бонусы применяются первыми, затем проценты перемножаются.</p>
+<main>
+  <section class="hero">
+    <div class="page">
+      <h1>Kaleidoscope <b>RP</b></h1>
+      <p class="sub">Minecraft-сервер с уклоном в ролевую игру и выживание. Остров Меланта, средневековое фэнтези, магия и история, которую пишешь ты.</p>
+      <p class="note">Здесь нет готового сюжета: есть мир, его правила и другие игроки. Кем ты попал на остров, зачем и что будешь делать дальше — решаешь только ты.</p>
     </div>
-  </aside>
+  </section>
+
+  <section class="page section">
+    <h2>Прежде чем подавать заявку</h2>
+    <p class="lead">Мы хотим, чтобы на сервере было комфортно играть, поэтому требования видны сразу. Если что-то из этого про тебя — отлично, читай дальше.</p>
+    <div class="reqs">
+      <div class="req">
+        <b>Лицензия</b>
+        <span>Нужен лицензионный Minecraft.</span>
+      </div>
+      <div class="req">
+        <b>Проходка до 150 ₽ в месяц</b>
+        <span>Платная проходка — она идёт на оплату хостинга сервера.</span>
+      </div>
+      <div class="req">
+        <b>Возможность ролить голосом</b>
+        <span>Для игры нужен голосовой отыгрыш.</span>
+      </div>
+      <div class="req">
+        <b>18+</b>
+        <span>Но мы можем сделать поблажку после разговора в войсе.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="page section">
+    <h2>Что есть на сервере</h2>
+    <div class="cards">
+      <a class="feature" href="builder.html">
+        <div class="tag">Киллер-фича</div>
+        <h3>Конструктор ориджинов</h3>
+        <p>Собери своего персонажа: размер, естество, пассивки, активки и секретки. Характеристики считаются автоматически по правилам сервера.</p>
+        <span class="go">Открыть конструктор →</span>
+      </a>
+      <a class="feature" href="lore.html">
+        <div class="tag">Лор сезона</div>
+        <h3>Остров Меланта</h3>
+        <p>Таинственный остров, из которого нельзя уплыть. Устройство мира, магия, мана, расы и Покровители — весь лор текущего сезона.</p>
+        <span class="go">Читать лор →</span>
+      </a>
+      <a class="feature" href="gameplay.html">
+        <div class="tag">Изменения</div>
+        <h3>Геймплей сезона</h3>
+        <p>Ни руды, ни враждебных мобов, ни ванильных структур. Алтарь, DeathDoor и другие правила, которые стоит знать заранее.</p>
+        <span class="go">Смотреть изменения →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="page section">
+    <h2>О сервере</h2>
+    <p>Kaleidoscope RP — это выживание с ролевым уклоном. Мир живёт по законам средневекового фэнтези: королевства, разные расы, магия, которая встречается редко и стоит дорого. Технологии почти отсутствуют — всё, что существует, похоже на изобретения одиночек с доступом к пороху и пару.</p>
+    <p>Сезон построен вокруг Меланты — острова, который невозможно найти на карте и невозможно покинуть. Попасть туда можно по-разному, а вот что делать дальше — искать выход, разгадывать тайны или просто жить — решаешь ты вместе с другими игроками.</p>
+  </section>
 </main>
 
-<div class="modal" id="modal" hidden>
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-title" id="modalTitle">Попадание в секретку</div>
-    <div id="modalBody"></div>
-    <button class="btn" id="modalClose">Понятно</button>
+<footer class="site-footer">
+  <div class="inner">
+    <span>Kaleidoscope RP · Minecraft-сервер с ролевой игрой</span>
+    <div class="socials">
+      <a href="https://discord.gg/vtG46FNb8T">Discord</a>
+      <a href="https://t.me/kaleidoscoperp">Telegram</a>
+    </div>
   </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script src="data.js"></script>
+</footer>
 <script>
-const $ = s => document.querySelector(s);
-const byName = (list, name) => list.find(x => x.name === name);
-const KIND = {};
-SPELLS.forEach(s => KIND[s.name] = 'spell');
-MISC.forEach(m => KIND[m.name] = 'misc');
-const SCHOOLS = [...new Set(SPELLS.map(s => s.school))];
-
-const EMPTY = { size: null, nature: null, stage: 5, passives: [], actives: [], minors: [null, null] };
-let state = JSON.parse(JSON.stringify(EMPTY));
-
-const TRANSLIT = {
-  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z',
-  и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r',
-  с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'shch',
-  ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya'
-};
-const slugOf = new Map();
-const nameBySlug = new Map();
-
-function slugify(text) {
-  return text.toLowerCase()
-    .replace(/[^a-zа-яё0-9]+/g, '-')
-    .split('-')
-    .map(word => word.split('').map(ch => TRANSLIT[ch] ?? ch).join(''))
-    .filter(Boolean)
-    .join('-');
+if (/^#(size|nature|passives|actives|minors)=/.test(location.hash)) {
+  location.replace('builder.html' + location.hash);
 }
-
-function initSlugs() {
-  [...SIZES, ...NATURES, ...PASSIVES, ...SPELLS, ...MISC].forEach(item => {
-    const base = slugify(item.name);
-    let slug = base;
-    let i = 2;
-    while (nameBySlug.has(slug)) slug = base + '-' + i++;
-    slugOf.set(item.name, slug);
-    nameBySlug.set(slug, item.name);
-  });
-}
-
-function encodeState() {
-  const parts = [];
-  if (state.size) parts.push('size=' + slugOf.get(state.size));
-  if (state.nature) parts.push('nature=' + slugOf.get(state.nature) + (natureObj()?.stages ? '.' + state.stage : ''));
-  if (state.passives.length) parts.push('passives=' + state.passives.map(p => slugOf.get(p)).join(','));
-  if (state.actives.length) parts.push('actives=' + state.actives.map(a => slugOf.get(a)).join(','));
-  const minors = state.minors.map(v => v || '_').join(',');
-  if (/[a-z]/.test(minors)) parts.push('minors=' + minors);
-  return '#' + parts.join('&');
-}
-
-function decodeState(hash) {
-  const q = new URLSearchParams(hash.slice(1));
-  const next = JSON.parse(JSON.stringify(EMPTY));
-  let found = false;
-  const size = q.get('size');
-  if (size && nameBySlug.has(size)) { next.size = nameBySlug.get(size); found = true; }
-  const nature = q.get('nature');
-  if (nature) {
-    const [slug, stage] = nature.split('.');
-    if (nameBySlug.has(slug)) {
-      next.nature = nameBySlug.get(slug);
-      if (stage != null && stage !== '') next.stage = Number(stage);
-      found = true;
-    }
-  }
-  const passives = q.get('passives');
-  if (passives) {
-    next.passives = passives.split(',').map(s => nameBySlug.get(s)).filter(p => byName(PASSIVES, p));
-    found = true;
-  }
-  const actives = q.get('actives');
-  if (actives) {
-    next.actives = actives.split(',').map(s => nameBySlug.get(s)).filter(a => KIND[a]);
-    found = true;
-  }
-  const minors = q.get('minors');
-  if (minors) {
-    next.minors = minors.split(',').map(s => MINORS.some(m => m.id === s) ? s : null).slice(0, 2);
-    found = true;
-  }
-  return found ? next : null;
-}
-
-const natureObj = () => byName(NATURES, state.nature);
-function rules() {
-  const out = { maxActives: 2, maxMinors: null, noSpells: false, noActives: false, msg: '' };
-  const list = [
-    natureObj()?.rule,
-    ...state.passives.filter(p => !wholeNeutralized(p)).map(p => byName(PASSIVES, p)?.rule),
-    ...activeSecrets().map(s => s.rule)
-  ].filter(Boolean);
-  list.forEach(r => {
-    if (r.maxActives != null) out.maxActives = Math.min(out.maxActives, r.maxActives);
-    if (r.maxMinors != null) out.maxMinors = Math.max(out.maxMinors ?? 0, r.maxMinors);
-    if (r.noSpells) out.noSpells = true;
-    if (r.noActives) { out.noActives = true; out.maxActives = 0; }
-    if (r.msg) out.msg = r.msg;
-  });
-  return out;
-}
-const maxAct = () => rules().maxActives;
-const freeMinors = () => { const r = rules(); return Math.max(0, (r.maxMinors ?? r.maxActives) - state.actives.length); };
-const isSecretMatched = secret => secret.combo.every(c =>
-  c.type === 'size' ? state.size === c.name :
-  c.type === 'nature' ? state.nature === c.name :
-  state.passives.includes(c.name)
-);
-const SECRET_DATA = typeof SECRETS === 'undefined' ? [] : SECRETS;
-const activeSecrets = () => SECRET_DATA.filter(isSecretMatched);
-
-const textOf = item => item.desc || (item.lines || []).map(l => l.text).join(' ');
-const allItems = () => [...SIZES, ...NATURES, ...PASSIVES, ...SPELLS, ...MISC];
-const lineText = (ability, id) => allItems().find(a => a.name === ability)?.lines?.find(l => l.id === id)?.text || '';
-const CUT_COLORS = ['#e8a33d', '#6cb6ff'];
-function buildStrikeBlock(s, cls) {
-  const box = document.createElement('div');
-  box.className = cls;
-  const head = document.createElement('div');
-  head.className = 'cut-head';
-  head.textContent = 'Нейтрализовано:';
-  box.append(head);
-  s.strikes.forEach((st, i) => {
-    const row = document.createElement('div');
-    row.className = 'cut-row';
-    const name = document.createElement('b');
-    name.className = 'cut-name';
-    name.style.color = CUT_COLORS[i % CUT_COLORS.length];
-    name.textContent = st.whole ? st.ability : st.ability + ':';
-    row.append(name);
-    if (st.whole) {
-      const tag = document.createElement('span');
-      tag.className = 'cut-whole';
-      tag.textContent = ' — целиком';
-      row.append(tag);
-    } else {
-      st.lines.forEach(id => {
-        const sEl = document.createElement('s');
-        sEl.textContent = lineText(st.ability, id);
-        row.append(' ', sEl);
-      });
-    }
-    box.append(row);
-  });
-  return box;
-}
-function struckLines(name) {
-  const set = new Set();
-  activeSecrets().forEach(s => (s.strikes || []).forEach(st => {
-    if (st.ability === name) (st.lines || []).forEach(id => set.add(id));
-  }));
-  return set;
-}
-
-const SECRET_TONE = { 1: '#6ee7a0', 2: '#f2d06b', 3: '#ff9b9b' };
-const blockedActives = () => new Set(activeSecrets().flatMap(s => s.blocks || []));
-const wholeNeutralized = name => activeSecrets().some(s => (s.strikes || []).some(st => st.ability === name && st.whole));
-function secretMark(name) {
-  const hits = activeSecrets().filter(s =>
-    s.combo.some(c => c.name === name) || (s.strikes || []).some(st => st.ability === name)
-  );
-  if (!hits.length) return null;
-  const stars = Math.max(...hits.map(s => s.stars));
-  return {
-    names: hits.map(s => s.name).join(', '),
-    stars,
-    multi: hits.length > 1,
-    colors: [...new Set(hits.map(s => s.stars))].sort((a, b) => a - b).map(n => SECRET_TONE[n]),
-    whole: hits.some(s => (s.strikes || []).some(st => st.ability === name && st.whole)),
-    struck: struckLines(name)
-  };
-}
-
-function toast(msg) {
-  const t = $('#toast');
-  t.textContent = msg;
-  t.classList.add('on');
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => t.classList.remove('on'), 2400);
-}
-
-function makeCard({ title, sub, desc, lines, struck, tone, grad, img, sel, off, onClick }) {
-  const b = document.createElement('button');
-  b.type = 'button';
-  b.className = 'card' + (sel ? ' sel' : '') + (off ? ' off' : '') + (tone ? ' sec-' + tone : '') + (grad ? ' sec-multi' : '');
-  if (grad) {
-    const first = grad.split(',')[0].trim();
-    b.style.setProperty('--g', 'linear-gradient(135deg, ' + grad + ', ' + first + ')');
-  }
-  const n = document.createElement('div');
-  n.className = 'name';
-  const t = document.createElement('span');
-  t.textContent = title;
-  n.append(t);
-  if (sub) {
-    const s = document.createElement('span');
-    s.className = 'stars';
-    s.textContent = sub;
-    n.append(s);
-  }
-  b.append(n);
-  if (lines || desc) {
-    const p = document.createElement('p');
-    p.className = 'desc';
-    if (lines) {
-      lines.forEach((l, i) => {
-        if (i) p.append(' ');
-        if (struck?.has(l.id)) {
-          const s = document.createElement('s');
-          s.textContent = l.text;
-          p.append(s);
-        } else {
-          p.append(l.text);
-        }
-      });
-    } else {
-      p.textContent = desc;
-    }
-    b.append(p);
-  }
-  if (img) {
-    const i = document.createElement('img');
-    i.src = img;
-    i.alt = '';
-    i.loading = 'lazy';
-    b.append(i);
-  }
-  b.addEventListener('click', onClick);
-  return b;
-}
-
-function renderSizes() {
-  const g = $('#sizeGrid');
-  g.textContent = '';
-  SIZES.forEach(s => {
-    const mark = secretMark(s.name);
-    g.append(makeCard({
-      title: s.name + (mark ? ' (' + mark.names + ')' : ''),
-      desc: mark?.whole ? 'Нейтрализовано' : s.desc,
-      tone: mark && !mark.multi ? mark.stars : null,
-      grad: mark?.multi ? mark.colors.join(', ') : null, img: s.gif, sel: state.size === s.name,
-      onClick: () => { state.size = state.size === s.name ? null : s.name; update(); }
-    }));
-  });
-  const c = $('#sizeCount');
-  c.textContent = (state.size ? 1 : 0) + '/1';
-  c.classList.toggle('ok', !!state.size);
-}
-
-function renderNatures() {
-  const g = $('#natureGrid');
-  g.textContent = '';
-  NATURES.forEach(n => {
-    const mark = secretMark(n.name);
-    g.append(makeCard({
-      title: n.name + (mark ? ' (' + mark.names + ')' : ''),
-      desc: mark?.whole ? 'Нейтрализовано' : n.desc,
-      tone: mark && !mark.multi ? mark.stars : null,
-      grad: mark?.multi ? mark.colors.join(', ') : null, img: n.gif, sel: state.nature === n.name,
-      onClick: () => {
-        if (state.nature === n.name) { state.nature = null; }
-        else {
-          const r = n.rule;
-          if (r && (state.actives.length > r.maxActives || (r.noSpells && state.actives.some(a => KIND[a] === 'spell')))) {
-            toast(r.msg);
-            return;
-          }
-          state.nature = n.name;
-          if (n.stages && !n.stages.some(s => s.n === state.stage)) state.stage = n.stages[0].n;
-        }
-        update();
-      }
-    }));
-  });
-  const c = $('#natureCount');
-  c.textContent = (state.nature ? 1 : 0) + '/1';
-  c.classList.toggle('ok', !!state.nature);
-  renderStages();
-}
-
-function renderStages() {
-  const box = $('#stages');
-  box.textContent = '';
-  const n = natureObj();
-  if (!n?.stages) return;
-  const row = document.createElement('div');
-  row.className = 'stage-row';
-  n.stages.forEach(st => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'stage' + (state.stage === st.n ? ' on' : '');
-    b.textContent = 'Стадия ' + st.n + ' — ' + st.label;
-    b.addEventListener('click', () => { state.stage = st.n; update(); });
-    row.append(b);
-  });
-  const d = document.createElement('p');
-  d.className = 'stage-desc';
-  d.textContent = n.stages.find(s => s.n === state.stage)?.desc || '';
-  box.append(row, d);
-}
-
-function renderPassives() {
-  const q = $('#passiveSearch').value.trim().toLowerCase();
-  const g = $('#passiveGrid');
-  g.textContent = '';
-  PASSIVES
-    .filter(p => !q || p.name.toLowerCase().includes(q) || textOf(p).toLowerCase().includes(q))
-    .forEach(p => {
-      const mark = secretMark(p.name);
-      let desc = p.desc, lines = p.lines;
-      if (mark) {
-        if (mark.whole) { desc = 'Нейтрализовано'; lines = null; }
-        else if (lines) lines = lines.filter(l => !mark.struck.has(l.id));
-      }
-      g.append(makeCard({
-        title: p.name + (mark ? ' (' + mark.names + ')' : ''),
-        sub: '★'.repeat(p.stars), desc, lines, struck: mark?.struck, img: p.gif,
-        tone: mark && !mark.multi ? mark.stars : null,
-        grad: mark?.multi ? mark.colors.join(', ') : null,
-        sel: state.passives.includes(p.name),
-        onClick: () => togglePassive(p)
-      }));
-    });
-  const c = $('#passiveCount');
-  c.textContent = state.passives.length + '/3';
-  c.classList.toggle('ok', state.passives.length === 3);
-}
-
-function togglePassive(p) {
-  const i = state.passives.indexOf(p.name);
-  if (i >= 0) { state.passives.splice(i, 1); update(); return; }
-  if (state.passives.length >= 3) { toast('Можно выбрать только три пассивки'); return; }
-  if (p.rule) {
-    const r = p.rule;
-    if (state.actives.length > r.maxActives || (r.noSpells && state.actives.some(a => KIND[a] === 'spell'))) {
-      toast(r.msg);
-      return;
-    }
-  }
-  state.passives.push(p.name);
-  update();
-}
-
-function renderActives() {
-  const q = $('#activeSearch').value.trim().toLowerCase();
-  const match = a => !q || a.name.toLowerCase().includes(q) || a.desc.toLowerCase().includes(q);
-  const r = rules();
-  const blocked = blockedActives();
-
-  const sp = $('#spellPane');
-  sp.textContent = '';
-  SCHOOLS.forEach(school => {
-    const items = SPELLS.filter(s => s.school === school && match(s));
-    if (!items.length) return;
-    const h = document.createElement('div');
-    h.className = 'school';
-    h.textContent = school;
-    sp.append(h);
-    const g = document.createElement('div');
-    g.className = 'grid';
-    items.forEach(s => g.append(makeCard({
-      title: s.name, desc: s.desc, img: s.gif, sel: state.actives.includes(s.name),
-      off: r.noActives || r.noSpells || blocked.has(s.name), onClick: () => toggleActive(s.name)
-    })));
-    sp.append(g);
-  });
-  if (!sp.children.length) {
-    const p = document.createElement('p');
-    p.className = 'empty';
-    p.textContent = 'Ничего не найдено.';
-    sp.append(p);
-  }
-
-  const mp = $('#miscPane');
-  mp.textContent = '';
-  const items = MISC.filter(match);
-  if (items.length) {
-    const g = document.createElement('div');
-    g.className = 'grid';
-    items.forEach(m => g.append(makeCard({
-      title: m.name, desc: m.desc, img: m.gif, sel: state.actives.includes(m.name),
-      off: r.noActives || blocked.has(m.name), onClick: () => toggleActive(m.name)
-    })));
-    mp.append(g);
-  } else {
-    const p = document.createElement('p');
-    p.className = 'empty';
-    p.textContent = 'Ничего не найдено.';
-    mp.append(p);
-  }
-
-  const c = $('#activeCount');
-  c.textContent = state.actives.length + '/' + maxAct();
-  c.classList.toggle('ok', state.actives.length === maxAct());
-}
-
-function toggleActive(name) {
-  const i = state.actives.indexOf(name);
-  if (i >= 0) { state.actives.splice(i, 1); update(); return; }
-  if (blockedActives().has(name)) { toast('Эта способность недоступна с активной секреткой'); return; }
-  const r = rules();
-  if (r.noActives) { toast('Чародей: активные способности недоступны'); return; }
-  if (KIND[name] === 'spell' && r.noSpells) { toast(r.msg); return; }
-  if (state.actives.length >= maxAct()) { toast('Максимум ' + maxAct() + ' активных способностей'); return; }
-  state.actives.push(name);
-  update();
-}
-
-function renderMinors() {
-  const box = $('#minorSlots');
-  box.textContent = '';
-  const free = freeMinors();
-  for (let i = 0; i < free; i++) {
-    const row = document.createElement('div');
-    row.className = 'minor';
-    const label = document.createElement('span');
-    label.textContent = 'Слот ' + (i + 1) + ':';
-    const sel = document.createElement('select');
-    const none = document.createElement('option');
-    none.value = '';
-    none.textContent = '— предмет по договорённости —';
-    sel.append(none);
-    MINORS.forEach(m => {
-      const o = document.createElement('option');
-      o.value = m.id;
-      o.textContent = m.name;
-      sel.append(o);
-    });
-    sel.value = state.minors[i] || '';
-    sel.addEventListener('change', () => { state.minors[i] = sel.value || null; update(); });
-    row.append(label, sel);
-    box.append(row);
-  }
-  if (!free) {
-    const p = document.createElement('p');
-    p.className = 'empty';
-    p.textContent = 'Все слоты активных способностей заняты — минорные усиления недоступны.';
-    box.append(p);
-  }
-  const filled = state.minors.slice(0, free).filter(Boolean).length;
-  $('#minorCount').textContent = free ? filled + '/' + free : '0/0';
-}
-
-function calc() {
-  const acc = {};
-  Object.keys(BASE).forEach(k => acc[k] = { flat: 0, mult: 1 });
-  const struck = new Set();
-  const whole = new Set();
-  activeSecrets().forEach(s => (s.strikes || []).forEach(st => {
-    if (st.whole) whole.add(st.ability);
-    (st.lines || []).forEach(id => struck.add(st.ability + '#' + id));
-  }));
-  const apply = (mods, src) => (mods || []).forEach(m => {
-    if (src && whole.has(src)) return;
-    if (src && m.id && struck.has(src + '#' + m.id)) return;
-    const t = acc[m.ch];
-    if (!t) return;
-    if (m.flat) t.flat += m.flat;
-    if (m.pct) t.mult *= 1 + m.pct / 100;
-  });
-  apply(byName(SIZES, state.size)?.mods, state.size);
-  const n = natureObj();
-  apply(n?.mods, n?.name);
-  if (n?.stages) apply(n.stages.find(s => s.n === state.stage)?.mods, n?.name);
-  state.passives.forEach(p => apply(byName(PASSIVES, p)?.mods, p));
-  state.minors.slice(0, freeMinors()).forEach(id => id && apply(MINORS.find(m => m.id === id)?.mods));
-  activeSecrets().forEach(s => apply(s.mods));
-  const out = {};
-  Object.keys(BASE).forEach(k => out[k] = (BASE[k] + acc[k].flat) * acc[k].mult);
-  return out;
-}
-
-function fmt(k, v) {
-  const ch = CHANNELS[k];
-  if (ch.unit === 'x') return (v / 100).toFixed(2) + '×';
-  if (ch.unit === 'hearts') return (Math.round(v * 10) / 10) + '♥';
-  const r = Math.round(v * 10) / 10;
-  return (Number.isInteger(r) ? r : r.toFixed(1)) + '%';
-}
-
-function renderStats() {
-  const vals = calc();
-  const box = $('#stats');
-  box.textContent = '';
-  Object.keys(BASE).forEach(k => {
-    const ch = CHANNELS[k];
-    const v = vals[k];
-    const d = v - BASE[k];
-    const row = document.createElement('div');
-    row.className = 'stat';
-    const l = document.createElement('span');
-    l.textContent = ch.label;
-    const b = document.createElement('b');
-    b.textContent = fmt(k, v);
-    if (Math.abs(d) > 0.05 && ch.better) {
-      b.className = (ch.better === 'up' ? d > 0 : d < 0) ? 'up' : 'down';
-    }
-    row.append(l, b);
-    box.append(row);
-  });
-}
-
-function renderChecklist() {
-  const box = $('#checklist');
-  box.textContent = '';
-  const secrets = activeSecrets();
-  const rows = [
-    ['Размер', state.size || '—', !!state.size],
-    ['Естество', state.nature || '—', !!state.nature],
-    ['Пассивки', state.passives.length + '/3', state.passives.length === 3],
-    ['Активки', state.actives.length + '/' + maxAct(), state.actives.length === maxAct()],
-    ['Секретки', secrets.length ? String(secrets.length) : '—', secrets.length > 0]
-  ];
-  rows.forEach(([label, val, ok]) => {
-    const d = document.createElement('div');
-    const l = document.createElement('span');
-    l.textContent = label;
-    const v = document.createElement('span');
-    v.className = 'v' + (ok ? ' ok' : '');
-    v.textContent = val;
-    d.append(l, v);
-    box.append(d);
-  });
-  if (state.passives.length) {
-    const d = document.createElement('div');
-    const l = document.createElement('span');
-    l.textContent = 'Состав';
-    const v = document.createElement('span');
-    v.className = 'v';
-    v.textContent = [...state.passives, ...state.actives].join(', ');
-    d.append(l, v);
-    box.append(d);
-  }
-}
-
-function renderSecrets() {
-  const box = $('#secrets');
-  box.textContent = '';
-  const list = activeSecrets();
-  const count = $('#secretCount');
-  count.textContent = list.length;
-  count.classList.toggle('ok', list.length > 0);
-  if (!list.length) {
-    const p = document.createElement('p');
-    p.className = 'empty';
-    p.textContent = 'Комбинации пока не собраны.';
-    box.append(p);
-    return;
-  }
-  list.forEach(s => {
-    const d = document.createElement('details');
-    d.className = 'secret';
-    const sum = document.createElement('summary');
-    const t = document.createElement('span');
-    t.textContent = s.name;
-    const st = document.createElement('span');
-    st.className = 'stars';
-    st.textContent = '★'.repeat(s.stars);
-    sum.append(t, st);
-    const body = document.createElement('div');
-    body.className = 'secret-body';
-    const combo = document.createElement('p');
-    combo.className = 'secret-combo';
-    combo.textContent = s.combo.map(c => c.name).join(' + ');
-    const eff = document.createElement('p');
-    eff.textContent = s.effect;
-    body.append(combo, eff);
-    if (s.strikes?.length) {
-      body.append(buildStrikeBlock(s, 'secret-cut'));
-    }
-    if (s.mods?.length) {
-      const mod = document.createElement('p');
-      mod.className = 'secret-mod';
-      mod.textContent = 'Учтено в расчёте: ' + s.mods
-        .map(m => CHANNELS[m.ch].label + ' ' + (m.flat > 0 ? '+' : '') + m.flat)
-        .join(', ');
-      body.append(mod);
-    }
-    d.append(sum, body);
-    box.append(d);
-  });
-}
-
-const seenSecrets = new Set();
-let secretsReady = false;
-
-function checkSecretsPopup() {
-  const matched = activeSecrets();
-  const names = new Set(matched.map(s => s.name));
-  [...seenSecrets].forEach(n => { if (!names.has(n)) seenSecrets.delete(n); });
-  const fresh = matched.filter(s => !seenSecrets.has(s.name));
-  matched.forEach(s => seenSecrets.add(s.name));
-  if (!secretsReady) { secretsReady = true; return; }
-  if (fresh.length) showSecretModal(fresh);
-}
-
-function showSecretModal(list) {
-  const body = $('#modalBody');
-  body.textContent = '';
-  list.forEach(s => {
-    const h = document.createElement('h3');
-    h.textContent = s.name + ' ' + '★'.repeat(s.stars);
-    const combo = document.createElement('p');
-    combo.className = 'modal-combo';
-    combo.textContent = s.combo.map(c => c.name).join(' + ');
-    const eff = document.createElement('p');
-    eff.className = 'modal-effect';
-    eff.textContent = s.effect;
-    body.append(h, combo, eff);
-    if (s.strikes?.length) {
-      body.append(buildStrikeBlock(s, 'modal-cut'));
-    }
-  });
-  $('#modal').hidden = false;
-  document.body.classList.add('locked');
-}
-
-function closeSecretModal() {
-  $('#modal').hidden = true;
-  document.body.classList.remove('locked');
-}
-
-function update() {
-  const blocked = blockedActives();
-  if (state.actives.some(a => blocked.has(a))) {
-    state.actives = state.actives.filter(a => !blocked.has(a));
-    toast('Способность недоступна с активной секреткой');
-  }
-  if (rules().noActives && state.actives.length) {
-    state.actives = [];
-    toast('Чародей: активные способности недоступны');
-  }
-  renderSizes();
-  renderNatures();
-  renderPassives();
-  renderActives();
-  renderMinors();
-  renderChecklist();
-  renderStats();
-  renderSecrets();
-  checkSecretsPopup();
-  save();
-}
-
-function save() {
-  try {
-    localStorage.setItem('origin-builder', JSON.stringify(state));
-  } catch (e) {}
-  history.replaceState(null, '', encodeState());
-}
-
-function sanitize() {
-  if (!SIZES.some(s => s.name === state.size)) state.size = null;
-  if (!NATURES.some(n => n.name === state.nature)) state.nature = null;
-  const n = natureObj();
-  if (!Array.isArray(state.passives)) state.passives = [];
-  if (!Array.isArray(state.actives)) state.actives = [];
-  if (!Array.isArray(state.minors)) state.minors = [null, null];
-  state.passives = state.passives.filter(p => byName(PASSIVES, p)).slice(0, 3);
-  state.actives = state.actives.filter(a => KIND[a]).slice(0, maxAct());
-  const r = rules();
-  if (r.noSpells) state.actives = state.actives.filter(a => KIND[a] !== 'spell');
-  if (r.maxActives) state.actives = state.actives.slice(0, r.maxActives);
-  if (n?.stages && !n.stages.some(s => s.n === state.stage)) state.stage = n.stages[0].n;
-  state.minors = state.minors.map(v => MINORS.some(m => m.id === v) ? v : null).slice(0, 2);
-}
-
-function load() {
-  let next = null;
-  if (location.hash.length > 1) next = decodeState(location.hash);
-  if (!next) {
-    try { next = JSON.parse(localStorage.getItem('origin-builder') || 'null'); } catch (e) {}
-  }
-  if (next && typeof next === 'object') Object.assign(state, next);
-  sanitize();
-}
-
-$('#passiveSearch').addEventListener('input', renderPassives);
-$('#activeSearch').addEventListener('input', renderActives);
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t === tab));
-    $('#spellPane').hidden = tab.dataset.tab !== 'spell';
-    $('#miscPane').hidden = tab.dataset.tab !== 'misc';
-  });
-});
-$('#share').addEventListener('click', () => {
-  const url = location.href;
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(url).then(() => toast('Ссылка на сборку скопирована'), () => toast(url));
-  } else {
-    toast(url);
-  }
-});
-$('#resetBtn').addEventListener('click', () => {
-  if (!confirm('Сбросить всю сборку?')) return;
-  state = JSON.parse(JSON.stringify(EMPTY));
-  update();
-});
-
-$('#modalClose').addEventListener('click', closeSecretModal);
-$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeSecretModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeSecretModal(); });
-
-initSlugs();
-load();
-update();
 </script>
 </body>
 </html>
