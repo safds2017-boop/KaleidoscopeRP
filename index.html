@@ -68,6 +68,27 @@ h2{font-size:18px;margin:0}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#233042;border:1px solid #3b4b64;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%)}
 .empty{color:var(--mut);font-size:13px}
+.secrets-block{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.sub-head{display:flex;align-items:center;gap:8px;font-size:16px;margin:0 0 10px}
+.secret{border:1px solid #3a2f4a;border-radius:10px;background:#1a1722;margin-bottom:8px;padding:8px 10px}
+.secret summary{cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:600;list-style:none}
+.secret summary::-webkit-details-marker{display:none}
+.secret-body{font-size:12px;color:#c3cddb;margin-top:8px}
+.secret-body p{margin:0 0 6px}
+.secret-body p:last-child{margin-bottom:0}
+.secret-combo{color:var(--mut)}
+.secret-mod{color:var(--acc)}
+.modal{position:fixed;inset:0;background:rgba(5,7,10,.72);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
+.modal[hidden]{display:none}
+.modal-card{background:var(--panel);border:1px solid #3a2f4a;border-radius:16px;padding:20px;max-width:620px;width:100%;max-height:82vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+.modal-title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c792ea;margin-bottom:12px}
+.modal-card h3{margin:0 0 4px;font-size:20px}
+.modal-card h3 + .modal-combo{margin-top:0}
+.modal-combo{color:var(--mut);font-size:13px;margin:0 0 8px}
+.modal-effect{font-size:14px;color:#d7dee9;margin:0 0 16px}
+.modal-effect:last-child{margin-bottom:0}
+.modal-card .btn{width:100%;margin-top:6px}
+body.locked{overflow:hidden}
 @media(max-width:980px){.layout{grid-template-columns:1fr}.side{position:static}}
 </style>
 </head>
@@ -129,10 +150,22 @@ h2{font-size:18px;margin:0}
       <h2>Итог</h2>
       <div class="chk" id="checklist"></div>
       <div class="stats" id="stats"></div>
+      <div class="secrets-block">
+        <h2 class="sub-head">Секретки <span class="count" id="secretCount">0</span></h2>
+        <div id="secrets"></div>
+      </div>
       <p class="note">Условные эффекты (день и ночь, панцирь, перегрев, мокрый, стадии) в цифры не входят — они в описаниях. Плоские бонусы применяются первыми, затем проценты перемножаются.</p>
     </div>
   </aside>
 </main>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-title" id="modalTitle">Попадание в секретку</div>
+    <div id="modalBody"></div>
+    <button class="btn" id="modalClose">Понятно</button>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -234,6 +267,12 @@ function rules() {
 }
 const maxAct = () => rules().maxActives;
 const freeMinors = () => Math.max(0, maxAct() - state.actives.length);
+const isSecretMatched = secret => secret.combo.every(c =>
+  c.type === 'size' ? state.size === c.name :
+  c.type === 'nature' ? state.nature === c.name :
+  state.passives.includes(c.name)
+);
+const activeSecrets = () => SECRETS.filter(isSecretMatched);
 
 function toast(msg) {
   const t = $('#toast');
@@ -477,6 +516,7 @@ function calc() {
   if (n?.stages) apply(n.stages.find(s => s.n === state.stage)?.mods);
   state.passives.forEach(p => apply(byName(PASSIVES, p)?.mods));
   state.minors.slice(0, freeMinors()).forEach(id => id && apply(byName(MINORS, id)?.mods));
+  activeSecrets().forEach(s => apply(s.mods));
   const out = {};
   Object.keys(BASE).forEach(k => out[k] = (BASE[k] + acc[k].flat) * acc[k].mult);
   return out;
@@ -515,11 +555,13 @@ function renderStats() {
 function renderChecklist() {
   const box = $('#checklist');
   box.textContent = '';
+  const secrets = activeSecrets();
   const rows = [
     ['Размер', state.size || '—', !!state.size],
     ['Естество', state.nature || '—', !!state.nature],
     ['Пассивки', state.passives.length + '/3', state.passives.length === 3],
-    ['Активки', state.actives.length + '/' + maxAct(), state.actives.length === maxAct()]
+    ['Активки', state.actives.length + '/' + maxAct(), state.actives.length === maxAct()],
+    ['Секретки', secrets.length ? String(secrets.length) : '—', secrets.length > 0]
   ];
   rows.forEach(([label, val, ok]) => {
     const d = document.createElement('div');
@@ -543,6 +585,87 @@ function renderChecklist() {
   }
 }
 
+function renderSecrets() {
+  const box = $('#secrets');
+  box.textContent = '';
+  const list = activeSecrets();
+  const count = $('#secretCount');
+  count.textContent = list.length;
+  count.classList.toggle('ok', list.length > 0);
+  if (!list.length) {
+    const p = document.createElement('p');
+    p.className = 'empty';
+    p.textContent = 'Комбинации пока не собраны.';
+    box.append(p);
+    return;
+  }
+  list.forEach(s => {
+    const d = document.createElement('details');
+    d.className = 'secret';
+    const sum = document.createElement('summary');
+    const t = document.createElement('span');
+    t.textContent = s.name;
+    const st = document.createElement('span');
+    st.className = 'stars';
+    st.textContent = '★'.repeat(s.stars);
+    sum.append(t, st);
+    const body = document.createElement('div');
+    body.className = 'secret-body';
+    const combo = document.createElement('p');
+    combo.className = 'secret-combo';
+    combo.textContent = s.combo.map(c => c.name).join(' + ');
+    const eff = document.createElement('p');
+    eff.textContent = s.effect;
+    body.append(combo, eff);
+    if (s.mods?.length) {
+      const mod = document.createElement('p');
+      mod.className = 'secret-mod';
+      mod.textContent = 'Учтено в расчёте: ' + s.mods
+        .map(m => CHANNELS[m.ch].label + ' ' + (m.flat > 0 ? '+' : '') + m.flat)
+        .join(', ');
+      body.append(mod);
+    }
+    d.append(sum, body);
+    box.append(d);
+  });
+}
+
+const seenSecrets = new Set();
+let secretsReady = false;
+
+function checkSecretsPopup() {
+  const matched = activeSecrets();
+  const names = new Set(matched.map(s => s.name));
+  [...seenSecrets].forEach(n => { if (!names.has(n)) seenSecrets.delete(n); });
+  const fresh = matched.filter(s => !seenSecrets.has(s.name));
+  matched.forEach(s => seenSecrets.add(s.name));
+  if (!secretsReady) { secretsReady = true; return; }
+  if (fresh.length) showSecretModal(fresh);
+}
+
+function showSecretModal(list) {
+  const body = $('#modalBody');
+  body.textContent = '';
+  list.forEach(s => {
+    const h = document.createElement('h3');
+    h.textContent = s.name + ' ' + '★'.repeat(s.stars);
+    const combo = document.createElement('p');
+    combo.className = 'modal-combo';
+    combo.textContent = s.combo.map(c => c.name).join(' + ');
+    const eff = document.createElement('p');
+    eff.className = 'modal-effect';
+    eff.textContent = s.effect;
+    body.append(h, combo, eff);
+  });
+  $('#modal').hidden = false;
+  document.body.classList.add('locked');
+}
+
+function closeSecretModal() {
+  $('#modal').hidden = true;
+  document.body.classList.remove('locked');
+}
+
 function update() {
   renderSizes();
   renderNatures();
@@ -551,6 +674,8 @@ function update() {
   renderMinors();
   renderChecklist();
   renderStats();
+  renderSecrets();
+  checkSecretsPopup();
   save();
 }
 
@@ -609,6 +734,10 @@ $('#resetBtn').addEventListener('click', () => {
   state = JSON.parse(JSON.stringify(EMPTY));
   update();
 });
+
+$('#modalClose').addEventListener('click', closeSecretModal);
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeSecretModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeSecretModal(); });
 
 initSlugs();
 load();
