@@ -29,7 +29,18 @@ h2{font-size:18px;margin:0}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .card{text-align:left;appearance:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 13px;color:inherit;font:inherit;cursor:pointer;transition:border-color .12s,transform .12s,background .12s}
 .card:hover{border-color:#3b475c;transform:translateY(-1px)}
-.card.sel{border-color:var(--acc);background:#15221b;box-shadow:0 0 0 1px var(--acc) inset}
+.card.sel{border-color:#4a86e0;background:#1a202b;box-shadow:0 0 0 1px #4a86e0 inset}
+.card.sec-1{color:#7ee2a8}
+.card.sec-2{color:#f2d06b}
+.card.sec-3{color:#ff9b9b}
+.card.sec-1 .desc,.card.sec-2 .desc,.card.sec-3 .desc{color:inherit}
+.card.sel.sec-1{border-color:#4ade80;background:#12211a;box-shadow:0 0 0 1px #4ade80 inset}
+.card.sel.sec-2{border-color:#e0c04a;background:#211d10;box-shadow:0 0 0 1px #e0c04a inset}
+.card.sel.sec-3{border-color:#e06060;background:#241416;box-shadow:0 0 0 1px #e06060 inset}
+.card.sec-multi{color:transparent;border:2px solid transparent;background:linear-gradient(var(--panel),var(--panel)) padding-box,var(--g) border-box}
+.card.sel.sec-multi{border-color:transparent;background:linear-gradient(#1a202b,#1a202b) padding-box,var(--g) border-box;box-shadow:none}
+.card.sec-multi .name span:first-child{color:transparent;background-image:var(--g);-webkit-background-clip:text;background-clip:text}
+.card.sec-multi .desc{color:transparent;background-image:var(--g);-webkit-background-clip:text;background-clip:text}
 .card.off{opacity:.35}
 .card .name{font-weight:600;display:flex;gap:8px;justify-content:space-between;align-items:baseline}
 .stars{color:var(--star);font-size:12px;white-space:nowrap;letter-spacing:1px}
@@ -39,6 +50,7 @@ h2{font-size:18px;margin:0}
 .cut-head{font-weight:600;margin-bottom:3px}
 .cut-row{margin:2px 0}
 .cut-name{margin-right:3px}
+.cut-whole{color:var(--mut);font-size:12px}
 .cut-row s{color:#8b95a5}
 .card img{width:100%;border-radius:8px;margin-top:8px;display:block}
 .side{position:sticky;top:16px}
@@ -298,13 +310,20 @@ function buildStrikeBlock(s, cls) {
     const name = document.createElement('b');
     name.className = 'cut-name';
     name.style.color = CUT_COLORS[i % CUT_COLORS.length];
-    name.textContent = st.ability + ':';
+    name.textContent = st.whole ? st.ability : st.ability + ':';
     row.append(name);
-    st.lines.forEach(id => {
-      const sEl = document.createElement('s');
-      sEl.textContent = lineText(st.ability, id);
-      row.append(' ', sEl);
-    });
+    if (st.whole) {
+      const tag = document.createElement('span');
+      tag.className = 'cut-whole';
+      tag.textContent = ' — целиком';
+      row.append(tag);
+    } else {
+      st.lines.forEach(id => {
+        const sEl = document.createElement('s');
+        sEl.textContent = lineText(st.ability, id);
+        row.append(' ', sEl);
+      });
+    }
     box.append(row);
   });
   return box;
@@ -312,9 +331,26 @@ function buildStrikeBlock(s, cls) {
 function struckLines(name) {
   const set = new Set();
   activeSecrets().forEach(s => (s.strikes || []).forEach(st => {
-    if (st.ability === name) st.lines.forEach(id => set.add(id));
+    if (st.ability === name) (st.lines || []).forEach(id => set.add(id));
   }));
   return set;
+}
+
+const SECRET_TONE = { 1: '#6ee7a0', 2: '#f2d06b', 3: '#ff9b9b' };
+function secretMark(name) {
+  const hits = activeSecrets().filter(s =>
+    s.combo.some(c => c.name === name) || (s.strikes || []).some(st => st.ability === name)
+  );
+  if (!hits.length) return null;
+  const stars = Math.max(...hits.map(s => s.stars));
+  return {
+    names: hits.map(s => s.name).join(', '),
+    stars,
+    multi: hits.length > 1,
+    colors: [...new Set(hits.map(s => s.stars))].sort((a, b) => a - b).map(n => SECRET_TONE[n]),
+    whole: hits.some(s => (s.strikes || []).some(st => st.ability === name && st.whole)),
+    struck: struckLines(name)
+  };
 }
 
 function toast(msg) {
@@ -325,10 +361,14 @@ function toast(msg) {
   toast.timer = setTimeout(() => t.classList.remove('on'), 2400);
 }
 
-function makeCard({ title, sub, desc, lines, struck, img, sel, off, onClick }) {
+function makeCard({ title, sub, desc, lines, struck, tone, grad, img, sel, off, onClick }) {
   const b = document.createElement('button');
   b.type = 'button';
-  b.className = 'card' + (sel ? ' sel' : '') + (off ? ' off' : '');
+  b.className = 'card' + (sel ? ' sel' : '') + (off ? ' off' : '') + (tone ? ' sec-' + tone : '') + (grad ? ' sec-multi' : '');
+  if (grad) {
+    const first = grad.split(',')[0].trim();
+    b.style.setProperty('--g', 'linear-gradient(135deg, ' + grad + ', ' + first + ')');
+  }
   const n = document.createElement('div');
   n.className = 'name';
   const t = document.createElement('span');
@@ -374,10 +414,16 @@ function makeCard({ title, sub, desc, lines, struck, img, sel, off, onClick }) {
 function renderSizes() {
   const g = $('#sizeGrid');
   g.textContent = '';
-  SIZES.forEach(s => g.append(makeCard({
-    title: s.name, desc: s.desc, img: s.gif, sel: state.size === s.name,
-    onClick: () => { state.size = state.size === s.name ? null : s.name; update(); }
-  })));
+  SIZES.forEach(s => {
+    const mark = secretMark(s.name);
+    g.append(makeCard({
+      title: s.name + (mark ? ' (' + mark.names + ')' : ''),
+      desc: mark?.whole ? 'Нейтрализовано' : s.desc,
+      tone: mark && !mark.multi ? mark.stars : null,
+      grad: mark?.multi ? mark.colors.join(', ') : null, img: s.gif, sel: state.size === s.name,
+      onClick: () => { state.size = state.size === s.name ? null : s.name; update(); }
+    }));
+  });
   const c = $('#sizeCount');
   c.textContent = (state.size ? 1 : 0) + '/1';
   c.classList.toggle('ok', !!state.size);
@@ -386,22 +432,28 @@ function renderSizes() {
 function renderNatures() {
   const g = $('#natureGrid');
   g.textContent = '';
-  NATURES.forEach(n => g.append(makeCard({
-    title: n.name, desc: n.desc, img: n.gif, sel: state.nature === n.name,
-    onClick: () => {
-      if (state.nature === n.name) { state.nature = null; }
-      else {
-        const r = n.rule;
-        if (r && (state.actives.length > r.maxActives || (r.noSpells && state.actives.some(a => KIND[a] === 'spell')))) {
-          toast(r.msg);
-          return;
+  NATURES.forEach(n => {
+    const mark = secretMark(n.name);
+    g.append(makeCard({
+      title: n.name + (mark ? ' (' + mark.names + ')' : ''),
+      desc: mark?.whole ? 'Нейтрализовано' : n.desc,
+      tone: mark && !mark.multi ? mark.stars : null,
+      grad: mark?.multi ? mark.colors.join(', ') : null, img: n.gif, sel: state.nature === n.name,
+      onClick: () => {
+        if (state.nature === n.name) { state.nature = null; }
+        else {
+          const r = n.rule;
+          if (r && (state.actives.length > r.maxActives || (r.noSpells && state.actives.some(a => KIND[a] === 'spell')))) {
+            toast(r.msg);
+            return;
+          }
+          state.nature = n.name;
+          if (n.stages && !n.stages.some(s => s.n === state.stage)) state.stage = n.stages[0].n;
         }
-        state.nature = n.name;
-        if (n.stages && !n.stages.some(s => s.n === state.stage)) state.stage = n.stages[0].n;
+        update();
       }
-      update();
-    }
-  })));
+    }));
+  });
   const c = $('#natureCount');
   c.textContent = (state.nature ? 1 : 0) + '/1';
   c.classList.toggle('ok', !!state.nature);
@@ -435,11 +487,22 @@ function renderPassives() {
   g.textContent = '';
   PASSIVES
     .filter(p => !q || p.name.toLowerCase().includes(q) || textOf(p).toLowerCase().includes(q))
-    .forEach(p => g.append(makeCard({
-      title: p.name, sub: '★'.repeat(p.stars), desc: p.desc, lines: p.lines, struck: struckLines(p.name), img: p.gif,
-      sel: state.passives.includes(p.name),
-      onClick: () => togglePassive(p)
-    })));
+    .forEach(p => {
+      const mark = secretMark(p.name);
+      let desc = p.desc, lines = p.lines;
+      if (mark) {
+        if (mark.whole) { desc = 'Нейтрализовано'; lines = null; }
+        else if (lines) lines = lines.filter(l => !mark.struck.has(l.id));
+      }
+      g.append(makeCard({
+        title: p.name + (mark ? ' (' + mark.names + ')' : ''),
+        sub: '★'.repeat(p.stars), desc, lines, struck: mark?.struck, img: p.gif,
+        tone: mark && !mark.multi ? mark.stars : null,
+        grad: mark?.multi ? mark.colors.join(', ') : null,
+        sel: state.passives.includes(p.name),
+        onClick: () => togglePassive(p)
+      }));
+    });
   const c = $('#passiveCount');
   c.textContent = state.passives.length + '/3';
   c.classList.toggle('ok', state.passives.length === 3);
@@ -561,20 +624,23 @@ function calc() {
   const acc = {};
   Object.keys(BASE).forEach(k => acc[k] = { flat: 0, mult: 1 });
   const struck = new Set();
-  activeSecrets().forEach(s => (s.strikes || []).forEach(st =>
-    st.lines.forEach(id => struck.add(st.ability + '#' + id))
-  ));
+  const whole = new Set();
+  activeSecrets().forEach(s => (s.strikes || []).forEach(st => {
+    if (st.whole) whole.add(st.ability);
+    (st.lines || []).forEach(id => struck.add(st.ability + '#' + id));
+  }));
   const apply = (mods, src) => (mods || []).forEach(m => {
+    if (src && whole.has(src)) return;
     if (src && m.id && struck.has(src + '#' + m.id)) return;
     const t = acc[m.ch];
     if (!t) return;
     if (m.flat) t.flat += m.flat;
     if (m.pct) t.mult *= 1 + m.pct / 100;
   });
-  apply(byName(SIZES, state.size)?.mods);
+  apply(byName(SIZES, state.size)?.mods, state.size);
   const n = natureObj();
-  apply(n?.mods);
-  if (n?.stages) apply(n.stages.find(s => s.n === state.stage)?.mods);
+  apply(n?.mods, n?.name);
+  if (n?.stages) apply(n.stages.find(s => s.n === state.stage)?.mods, n?.name);
   state.passives.forEach(p => apply(byName(PASSIVES, p)?.mods, p));
   state.minors.slice(0, freeMinors()).forEach(id => id && apply(byName(MINORS, id)?.mods));
   activeSecrets().forEach(s => apply(s.mods));
