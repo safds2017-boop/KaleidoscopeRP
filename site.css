@@ -84,9 +84,15 @@ p{margin:0 0 14px;color:#c3cddb}
 .mod-name{color:inherit;text-decoration:none}
 .mod-name:hover,.mod-name:hover .star{color:var(--acc2)}
 .mod-legend{color:var(--mut);font-size:14px;margin:0 0 14px}
-.change{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 12px;scroll-margin-top:80px}
+.change{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 12px}
 .change h2{margin:0 0 10px;font-size:20px}
 .change ul{margin:0;padding-left:20px;color:#c3cddb}
 .change li{margin:0 0 6px}
 .change li:last-child{margin-bottom:0}
 .change:target{border-color:#3b475c;box-shadow:0 0 0 1px #3b475c inset}
+@keyframes change-flash{
+  0%{background:#1d2a24;border-color:var(--acc);box-shadow:0 0 0 2px var(--acc),0 0 30px rgba(126,231,135,.28)}
+  70%{background:#1d2a24;border-color:var(--acc);box-shadow:0 0 0 2px var(--acc),0 0 24px rgba(126,231,135,.18)}
+  100%{background:var(--panel);border-color:var(--line);box-shadow:0 0 0 1px var(--line)}
+}
+.change.flash{animation:change-flash 1.3s ease-out 1}

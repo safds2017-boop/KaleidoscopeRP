@@ -26,7 +26,6 @@
     <div class="page">
       <h1>Изменения модов</h1>
       <p class="sub">Что на сервере работает не так, как в оригинальных модах.</p>
-      <p class="note"><span class="star">★</span> — значительные изменения работы мода на сервере.</p>
     </div>
   </section>
 
@@ -43,7 +42,6 @@
     <div class="change" id="minecraft">
       <h2>Minecraft</h2>
       <ul>
-        <li>Это не мод, а основа сервера.</li>
         <li>Некоторые функциональные блоки нельзя скрафтить или добыть киркой — они находятся в особых локациях.</li>
         <li>Жителей и разбойников нет.</li>
       </ul>
@@ -142,6 +140,25 @@
     </div>
   </div>
 </footer>
+<script>
+(() => {
+  let timer = 0;
+  const focus = () => {
+    const el = document.getElementById(location.hash.slice(1));
+    if (!el) return;
+    el.scrollIntoView({ block: 'center' });
+    el.dataset.flash = String(Date.now());
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+    clearTimeout(timer);
+    timer = setTimeout(() => el.classList.remove('flash'), 1400);
+  };
+  addEventListener('hashchange', focus);
+  addEventListener('load', () => setTimeout(focus, 60));
+  setTimeout(focus, 0);
+})();
+</script>
 <script src="bg.js?v=7" defer></script>
 </body>
 </html>
