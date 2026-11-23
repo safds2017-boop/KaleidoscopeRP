@@ -181,12 +181,12 @@
         float sec = 6.2831853 / uSectors;
         float m = mod(ang, sec);
         float f = m < sec * 0.5 ? m : sec - m;
-        float rr = r * (1.0 + 0.05 * sin(t * 0.03));
+        float rr = r * (1.0 + 0.05 * sin(t * 0.04));
         vec2 q = vec2(cos(f), abs(sin(f))) * rr * 5.0 * uZoom + uSeed;
 
-        float n = 0.68 * fbm(q * 1.55 + vec2(t * 0.018, -t * 0.014))
-                + 0.32 * fbm(q * 3.4 + vec2(-t * 0.014, t * 0.02) + 9.0);
-        n += 0.05 * sin(rr * 22.0 - t * 0.35);
+        float n = 0.68 * fbm(q * 1.55 + vec2(t * 0.032, -t * 0.025))
+                + 0.32 * fbm(q * 3.4 + vec2(-t * 0.025, t * 0.036) + 9.0);
+        n += 0.05 * sin(rr * 22.0 - t * 0.55);
         n = clamp(n, 0.0, 1.0);
 
         vec3 col = mix(uC1 * 0.6, uC1, smoothstep(0.0, 0.42, n));
@@ -370,8 +370,8 @@
         ];
       };
 
-      const pulse = 1 + 0.05 * Math.sin(t * 0.03);
-      const t1 = t * 0.018, t2 = t * 0.014;
+      const pulse = 1 + 0.05 * Math.sin(t * 0.04);
+      const t1 = t * 0.032, t2 = t * 0.025;
       for (let y = 0; y < H; y++) {
         const dy = (y - cy) / R;
         for (let x = 0; x < W; x++) {
@@ -387,7 +387,7 @@
           const fx = rr * Math.cos(f) * zoom + seed[0], fy = Math.abs(rr * Math.sin(f)) * zoom + seed[1];
           let v = 0.68 * noise(fx * 8 + t1, fy * 8 - t2)
                 + 0.32 * noise(fx * 18 - t1 * 0.7 + 11, fy * 18 + t2 * 0.8 + 7);
-          v += 0.05 * Math.sin(rr * 22 - t * 0.35);
+          v += 0.05 * Math.sin(rr * 22 - t * 0.55);
           v = v < 0 ? 0 : v > 1 ? 1 : v;
           const c = at(v);
           data[i] = c[0];
