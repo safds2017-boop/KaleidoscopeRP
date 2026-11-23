@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
@@ -29,6 +29,8 @@ h2{font-size:18px;margin:0}
 .count.ok{color:var(--acc);border-color:rgba(126,231,135,.45)}
 .hint{margin:6px 0 12px;color:var(--mut);font-size:13px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card.wide{grid-column:1/-1}
+.band-break{grid-column:1/-1;height:0}
 .card{text-align:left;appearance:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 13px;color:inherit;font:inherit;cursor:pointer;transition:border-color .12s,transform .12s,background .12s}
 .card:hover{border-color:#3b475c;transform:translateY(-1px)}
 .card.sel{border-color:#4a86e0;background:#1a202b;box-shadow:0 0 0 1px #4a86e0 inset}
@@ -122,6 +124,7 @@ body.locked{overflow:hidden}
       <a href="lore.html">Лор</a>
       <a href="gameplay.html">Геймплей</a>
       <a href="mods.html">Сборка</a>
+      <a href="requirements.html">Требования</a>
     </nav>
   </div>
 </header>
@@ -164,16 +167,15 @@ body.locked{overflow:hidden}
       <div class="tabs">
         <button class="tab on" data-tab="spell">Заклинания Iron's Spellbooks</button>
         <button class="tab" data-tab="misc">Иные способности</button>
+        <button class="tab" data-tab="minors">Минорные усиления</button>
       </div>
       <input class="search" id="activeSearch" placeholder="Поиск по активкам">
       <div id="spellPane"></div>
       <div id="miscPane" hidden></div>
-    </section>
-
-    <section class="block">
-      <div class="block-head"><h2>Минорные усиления</h2><span class="count" id="minorCount">0/2</span></div>
-      <p class="hint">За каждый неиспользованный слот активки — одно усиление или предмет по договорённости.</p>
-      <div class="minors" id="minorSlots"></div>
+      <div id="minorPane" hidden>
+        <p class="hint">За каждый неиспользованный слот активки — одно усиление или предмет по договорённости.</p>
+        <div class="minors" id="minorSlots"></div>
+      </div>
     </section>
   </div>
 
@@ -200,8 +202,9 @@ body.locked{overflow:hidden}
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="fx-tip" class="fx-tip" hidden></div>
 
-<script src="data.js"></script>
+<script src="data.js?v=5"></script>
 <script>
 const $ = s => document.querySelector(s);
 const byName = (list, name) => list.find(x => x.name === name);
@@ -280,7 +283,7 @@ function decodeState(hash) {
   }
   const minors = q.get('minors');
   if (minors) {
-    next.minors = minors.split(',').map(s => MINORS.some(m => m.id === s) ? s : null).slice(0, 2);
+    next.minors = minors.split(',').map(s => (s === 'item' || MINORS.some(m => m.id === s)) ? s : null).slice(0, 2);
     found = true;
   }
   return found ? next : null;
@@ -304,6 +307,8 @@ function rules() {
   return out;
 }
 const maxAct = () => rules().maxActives;
+const slotCap = () => { const r = rules(); return r.noActives ? (r.maxMinors ?? r.maxActives) : r.maxActives; };
+const usedSlots = () => state.actives.length + state.minors.slice(0, freeMinors()).filter(Boolean).length;
 const freeMinors = () => { const r = rules(); return Math.max(0, (r.maxMinors ?? r.maxActives) - state.actives.length); };
 const isSecretMatched = secret => secret.combo.every(c =>
   c.type === 'size' ? state.size === c.name :
@@ -383,10 +388,10 @@ function toast(msg) {
   toast.timer = setTimeout(() => t.classList.remove('on'), 2400);
 }
 
-function makeCard({ title, sub, desc, lines, struck, tone, grad, img, sel, off, onClick }) {
+function makeCard({ title, sub, desc, lines, struck, tone, grad, img, sel, off, wide, onClick }) {
   const b = document.createElement('button');
   b.type = 'button';
-  b.className = 'card' + (sel ? ' sel' : '') + (off ? ' off' : '') + (tone ? ' sec-' + tone : '') + (grad ? ' sec-multi' : '');
+  b.className = 'card' + (sel ? ' sel' : '') + (off ? ' off' : '') + (tone ? ' sec-' + tone : '') + (grad ? ' sec-multi' : '') + (wide ? ' wide' : '');
   if (grad) {
     const first = grad.split(',')[0].trim();
     b.style.setProperty('--g', 'linear-gradient(135deg, ' + grad + ', ' + first + ')');
@@ -509,19 +514,24 @@ function renderPassives() {
   g.textContent = '';
   PASSIVES
     .filter(p => !q || p.name.toLowerCase().includes(q) || textOf(p).toLowerCase().includes(q))
-    .forEach(p => {
+    .sort((a, b) => a.stars - b.stars || (a.wide ? 1 : 0) - (b.wide ? 1 : 0) || textOf(a).length - textOf(b).length)
+    .forEach((p, i, arr) => {
+      if (i && arr[i - 1].stars !== p.stars) {
+        const br = document.createElement('div');
+        br.className = 'band-break';
+        g.append(br);
+      }
       const mark = secretMark(p.name);
       let desc = p.desc, lines = p.lines;
       if (mark) {
         if (mark.whole) { desc = 'Нейтрализовано'; lines = null; }
-        else if (lines) lines = lines.filter(l => !mark.struck.has(l.id));
       }
       g.append(makeCard({
         title: p.name + (mark ? ' (' + mark.names + ')' : ''),
         sub: '★'.repeat(p.stars), desc, lines, struck: mark?.struck, img: p.gif,
         tone: mark && !mark.multi ? mark.stars : null,
         grad: mark?.multi ? mark.colors.join(', ') : null,
-        sel: state.passives.includes(p.name),
+        sel: state.passives.includes(p.name), wide: !!p.wide,
         onClick: () => togglePassive(p)
       }));
     });
@@ -594,8 +604,8 @@ function renderActives() {
   }
 
   const c = $('#activeCount');
-  c.textContent = state.actives.length + '/' + maxAct();
-  c.classList.toggle('ok', state.actives.length === maxAct());
+  c.textContent = usedSlots() + '/' + slotCap();
+  c.classList.toggle('ok', usedSlots() === slotCap());
 }
 
 function toggleActive(name) {
@@ -622,7 +632,7 @@ function renderMinors() {
     const sel = document.createElement('select');
     const none = document.createElement('option');
     none.value = '';
-    none.textContent = '— предмет по договорённости —';
+    none.textContent = '—';
     sel.append(none);
     MINORS.forEach(m => {
       const o = document.createElement('option');
@@ -630,6 +640,10 @@ function renderMinors() {
       o.textContent = m.name;
       sel.append(o);
     });
+    const item = document.createElement('option');
+    item.value = 'item';
+    item.textContent = 'Предмет по договорённости';
+    sel.append(item);
     sel.value = state.minors[i] || '';
     sel.addEventListener('change', () => { state.minors[i] = sel.value || null; update(); });
     row.append(label, sel);
@@ -641,8 +655,6 @@ function renderMinors() {
     p.textContent = 'Все слоты активных способностей заняты — минорные усиления недоступны.';
     box.append(p);
   }
-  const filled = state.minors.slice(0, free).filter(Boolean).length;
-  $('#minorCount').textContent = free ? filled + '/' + free : '0/0';
 }
 
 function calc() {
@@ -712,7 +724,7 @@ function renderChecklist() {
     ['Размер', state.size || '—', !!state.size],
     ['Естество', state.nature || '—', !!state.nature],
     ['Пассивки', state.passives.length + '/3', state.passives.length === 3],
-    ['Активки', state.actives.length + '/' + maxAct(), state.actives.length === maxAct()],
+    ['Активки', usedSlots() + '/' + slotCap(), usedSlots() === slotCap()],
     ['Секретки', secrets.length ? String(secrets.length) : '—', secrets.length > 0]
   ];
   rows.forEach(([label, val, ok]) => {
@@ -866,7 +878,7 @@ function sanitize() {
   if (r.noSpells) state.actives = state.actives.filter(a => KIND[a] !== 'spell');
   if (r.maxActives) state.actives = state.actives.slice(0, r.maxActives);
   if (n?.stages && !n.stages.some(s => s.n === state.stage)) state.stage = n.stages[0].n;
-  state.minors = state.minors.map(v => MINORS.some(m => m.id === v) ? v : null).slice(0, 2);
+  state.minors = state.minors.map(v => (v === 'item' || MINORS.some(m => m.id === v)) ? v : null).slice(0, 2);
 }
 
 function load() {
@@ -884,8 +896,11 @@ $('#activeSearch').addEventListener('input', renderActives);
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t === tab));
-    $('#spellPane').hidden = tab.dataset.tab !== 'spell';
-    $('#miscPane').hidden = tab.dataset.tab !== 'misc';
+    const key = tab.dataset.tab;
+    $('#spellPane').hidden = key !== 'spell';
+    $('#miscPane').hidden = key !== 'misc';
+    $('#minorPane').hidden = key !== 'minors';
+    $('#activeSearch').hidden = key === 'minors';
   });
 });
 $('#share').addEventListener('click', () => {
@@ -910,6 +925,124 @@ initSlugs();
 load();
 update();
 </script>
-<script src="bg.js?v=7" defer></script>
+<script>
+(() => {
+  const FX = [
+    { en: 'Burning', d: '\u0413\u043e\u0440\u0435\u043d\u0438\u0435: \u043f\u0435\u0440\u0438\u043e\u0434\u0438\u0447\u0435\u0441\u043a\u0438 \u043d\u0430\u043d\u043e\u0441\u0438\u0442 \u0443\u0440\u043e\u043d, \u043e\u0442\u0434\u0435\u043b\u044c\u043d\u043e \u043e\u0442 \u043e\u0431\u044b\u0447\u043d\u043e\u0433\u043e \u0433\u043e\u0440\u0435\u043d\u0438\u044f Minecraft.', re: 'Burning' },
+    { en: 'Submerged', d: '\u0423\u0442\u043e\u043f\u0430\u043d\u0438\u0435: \u0432\u043e\u0437\u0434\u0443\u0445\u0430 \u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u0441\u044f \u043c\u0435\u043d\u044c\u0448\u0435 \u0434\u0430\u0436\u0435 \u043d\u0430 \u0441\u0443\u0448\u0435, \u043f\u043e\u0434 \u0432\u043e\u0434\u043e\u0439 \u2014 \u0431\u044b\u0441\u0442\u0440\u0435\u0435. \u041a\u043e\u0433\u0434\u0430 \u0432\u043e\u0437\u0434\u0443\u0445 \u043a\u043e\u043d\u0447\u0430\u0435\u0442\u0441\u044f, \u0432\u044b \u0437\u0430\u0434\u044b\u0445\u0430\u0435\u0442\u0435\u0441\u044c. \u0423\u043c\u0435\u043d\u044c\u0448\u0430\u0435\u0442 \u043d\u0430\u043d\u043e\u0441\u0438\u043c\u044b\u0439 \u0443\u0440\u043e\u043d.', re: 'Submerged' },
+    { en: 'Freeze', d: '\u0417\u0430\u043c\u043e\u0440\u043e\u0437\u043a\u0430: \u043a\u0430\u043a \u0432 \u0440\u044b\u0445\u043b\u043e\u043c \u0441\u043d\u0435\u0433\u0443 \u2014 \u043f\u043e\u0441\u0442\u0435\u043f\u0435\u043d\u043d\u043e \u0437\u0430\u043c\u0435\u0440\u0437\u0430\u0435\u0442\u0435, \u0437\u0430\u043c\u0435\u0434\u043b\u044f\u0435\u0442\u0435\u0441\u044c \u0438 \u043f\u043e\u043b\u0443\u0447\u0430\u0435\u0442\u0435 \u0443\u0440\u043e\u043d.', re: 'Freeze' },
+    { en: 'Echoing Strike', d: '\u0423\u0434\u0430\u0440\u044b \u044d\u0445\u043e: \u0441\u043b\u0435\u0434\u0443\u044e\u0449\u0430\u044f \u0430\u0442\u0430\u043a\u0430 \u0441\u043e\u0437\u0434\u0430\u0451\u0442 \u043c\u0430\u0433\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u043a\u043b\u0438\u043d\u043e\u043a, \u043a\u043e\u0442\u043e\u0440\u044b\u0439 \u0431\u044c\u0451\u0442 \u0446\u0435\u043b\u044c; \u043f\u043e\u0441\u043b\u0435 \u0443\u0434\u0430\u0440\u0430 \u043a\u043b\u0438\u043d\u043e\u043a \u0438\u0441\u0447\u0435\u0437\u0430\u0435\u0442.', re: 'Echoing Strike' },
+    { en: 'Electric Shock', d: '\u042d\u043b\u0435\u043a\u0442\u0440\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u0448\u043e\u043a: \u043f\u0440\u0438\u043c\u0435\u0440\u043d\u043e \u0440\u0430\u0437 \u0432 3 \u0441\u0435\u043a\u0443\u043d\u0434\u044b \u043d\u0430\u043d\u043e\u0441\u0438\u0442 \u0443\u0440\u043e\u043d \u0438 \u0432\u0435\u0448\u0430\u0435\u0442 \u0437\u0430\u043c\u0435\u0434\u043b\u0435\u043d\u0438\u0435, \u0441\u043b\u0430\u0431\u043e\u0441\u0442\u044c \u0438 \u0443\u0442\u043e\u043c\u043b\u0435\u043d\u0438\u0435 10 \u0443\u0440\u043e\u0432\u043d\u044f.', re: 'Electric Shock' },
+    { en: 'Charged', d: '\u0417\u0430\u0440\u044f\u0436\u0435\u043d\u043d\u044b\u0439: +5% \u0441\u043a\u043e\u0440\u043e\u0441\u0442\u0438, +5% \u0443\u0440\u043e\u043d\u0430 \u0430\u0442\u0430\u043a\u0438 \u0438 +5% \u0441\u0438\u043b\u044b \u0437\u0430\u043a\u043b\u0438\u043d\u0430\u043d\u0438\u0439 \u043c\u043e\u043b\u043d\u0438\u0438 \u0437\u0430 \u0443\u0440\u043e\u0432\u0435\u043d\u044c.', re: 'Charged' },
+    { en: 'Magnet', d: '\u041c\u0430\u0433\u043d\u0438\u0442: \u043f\u0440\u0435\u0434\u043c\u0435\u0442\u044b \u043f\u0440\u0438\u0442\u044f\u0433\u0438\u0432\u0430\u044e\u0442\u0441\u044f \u0441 \u0431\u043e\u043b\u044c\u0448\u0435\u0433\u043e \u0440\u0430\u0441\u0441\u0442\u043e\u044f\u043d\u0438\u044f; \u043d\u0430 \u0448\u0438\u0444\u0442\u0435 \u2014 \u043a\u0430\u043a \u043e\u0431\u044b\u0447\u043d\u043e.', re: 'Magnet' },
+    { en: 'Injury', d: '\u0422\u0440\u0430\u0432\u043c\u0430: \u043f\u043e\u043b\u0443\u0447\u0430\u0435\u043c\u044b\u0439 \u0443\u0440\u043e\u043d \u0432\u044b\u0448\u0435 \u0432 \u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u0438 \u043e\u0442 \u0443\u0440\u043e\u0432\u043d\u044f \u044d\u0444\u0444\u0435\u043a\u0442\u0430.', re: 'Injury' },
+    { en: 'Slowness', d: '\u0417\u0430\u043c\u0435\u0434\u043b\u0435\u043d\u0438\u0435: \u0441\u043a\u043e\u0440\u043e\u0441\u0442\u044c \u043f\u0435\u0440\u0435\u0434\u0432\u0438\u0436\u0435\u043d\u0438\u044f \u043d\u0438\u0436\u0435 \u043d\u0430 15% \u0437\u0430 \u0443\u0440\u043e\u0432\u0435\u043d\u044c.', re: '\u0437\u0430\u043c\u0435\u0434\u043b\u0435\u043d\u0438[\u0430-\u044f\u0451]*' },
+    { en: 'Weakness', d: '\u0421\u043b\u0430\u0431\u043e\u0441\u0442\u044c: \u0443\u0440\u043e\u043d \u0430\u0442\u0430\u043a\u0438 \u043d\u0438\u0436\u0435 \u043d\u0430 4 \u0437\u0430 \u0443\u0440\u043e\u0432\u0435\u043d\u044c.', re: '\u0441\u043b\u0430\u0431\u043e\u0441\u0442[\u0430-\u044f\u0451]*' },
+    { en: 'Mining Fatigue', d: '\u0423\u0442\u043e\u043c\u043b\u0435\u043d\u0438\u0435: \u043a\u043e\u043f\u0430\u043d\u0438\u0435 \u0438 \u0430\u0442\u0430\u043a\u0430 \u043c\u0435\u0434\u043b\u0435\u043d\u043d\u0435\u0435.', re: '\u0443\u0442\u043e\u043c\u043b\u0435\u043d\u0438[\u0430-\u044f\u0451]*' },
+    { en: 'Nausea', d: '\u0422\u043e\u0448\u043d\u043e\u0442\u0430: \u0438\u0441\u043a\u0430\u0436\u0430\u0435\u0442 \u0438\u0437\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u0438\u0435.', re: '\u0442\u043e\u0448\u043d\u043e\u0442[\u0430-\u044f\u0451]*' },
+    { en: 'Regeneration', d: '\u0420\u0435\u0433\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f: \u0437\u0434\u043e\u0440\u043e\u0432\u044c\u0435 \u0432\u043e\u0441\u0441\u0442\u0430\u043d\u0430\u0432\u043b\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u0441\u043e \u0432\u0440\u0435\u043c\u0435\u043d\u0435\u043c.', re: '\u0440\u0435\u0433\u0435\u043d\u0435\u0440\u0430\u0446\u0438[\u0430-\u044f\u0451]*' },
+    { en: 'Invisibility', d: '\u041d\u0435\u0432\u0438\u0434\u0438\u043c\u043e\u0441\u0442\u044c: \u0432\u0430\u0441 \u043d\u0435 \u0432\u0438\u0434\u043d\u043e; \u0431\u0440\u043e\u043d\u044f \u0438 \u043f\u0440\u0435\u0434\u043c\u0435\u0442\u044b \u0432 \u0440\u0443\u043a\u0430\u0445 \u043e\u0441\u0442\u0430\u044e\u0442\u0441\u044f \u0437\u0430\u043c\u0435\u0442\u043d\u044b\u043c\u0438.', re: '\u043d\u0435\u0432\u0438\u0434\u0438\u043c\u043e\u0441\u0442[\u0430-\u044f\u0451]*' },
+    { en: 'Wither', d: '\u0418\u0441\u0441\u0443\u0448\u0435\u043d\u0438\u0435: \u043f\u0435\u0440\u0438\u043e\u0434\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u0443\u0440\u043e\u043d, \u043b\u0435\u0447\u0435\u043d\u0438\u0435 \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442 \u0445\u0443\u0436\u0435.', re: '\u0438\u0441\u0441\u0443\u0448\u0435\u043d\u0438[\u0430-\u044f\u0451]*' },
+    { en: 'Levitation', d: '\u041b\u0435\u0432\u0438\u0442\u0430\u0446\u0438\u044f: \u043f\u043e\u0434\u043d\u0438\u043c\u0430\u0435\u0442 \u0432\u0432\u0435\u0440\u0445.', re: '\u043b\u0435\u0432\u0438\u0442\u0430\u0446\u0438[\u0430-\u044f\u0451]*' },
+    { en: 'Poison', d: '\u041e\u0442\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435: \u0443\u0440\u043e\u043d \u0441\u043e \u0432\u0440\u0435\u043c\u0435\u043d\u0435\u043c, \u043d\u043e \u043d\u0435 \u0441\u043c\u0435\u0440\u0442\u0435\u043b\u044c\u043d\u044b\u0439.', re: '\u043e\u0442\u0440\u0430\u0432\u043b\u0435\u043d\u0438[\u0430-\u044f\u0451]*' },
+    { en: 'Blindness', d: '\u0421\u043b\u0435\u043f\u043e\u0442\u0430: \u043e\u0431\u0437\u043e\u0440 \u043f\u043e\u0447\u0442\u0438 \u043f\u0440\u043e\u043f\u0430\u0434\u0430\u0435\u0442.', re: '\u0441\u043b\u0435\u043f\u043e\u0442[\u0430-\u044f\u0451]*' },
+    { en: 'Fire Resistance', d: '\u041e\u0433\u043d\u0435\u0441\u0442\u043e\u0439\u043a\u043e\u0441\u0442\u044c: \u0438\u043c\u043c\u0443\u043d\u0438\u0442\u0435\u0442 \u043a \u043e\u0433\u043d\u044e \u0438 \u043b\u0430\u0432\u0435.', re: '\u043e\u0433\u043d\u0435\u0441\u0442\u043e\u0439\u043a\u043e\u0441\u0442[\u0430-\u044f\u0451]*' }
+  ];
+
+  const rx = new RegExp(FX.map(f => '(' + f.re + ')').join('|'), 'g');
+
+  function wrapText(node) {
+    const text = node.nodeValue;
+    if (!text || text.length < 3) return;
+    const parent = node.parentElement;
+    if (!parent || parent.closest('.fx, .fx-tip, script, style, textarea')) return;
+    let m, last = 0, frag = null;
+    rx.lastIndex = 0;
+    while ((m = rx.exec(text))) {
+      let idx = -1;
+      for (let i = 0; i < FX.length; i++) if (m[i + 1] !== undefined) { idx = i; break; }
+      if (idx < 0) continue;
+      if (!frag) frag = document.createDocumentFragment();
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const span = document.createElement('span');
+      span.className = 'fx';
+      span.dataset.fx = String(idx);
+      span.textContent = m[0];
+      frag.appendChild(span);
+      last = m.index + m[0].length;
+    }
+    if (!frag) return;
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    node.parentNode.replaceChild(frag, node);
+  }
+
+  function scan(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: n => n.parentElement && n.parentElement.closest('.fx') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(wrapText);
+  }
+
+  const tip = document.getElementById('fx-tip');
+  let hideTimer = 0;
+
+  function place(x, y) {
+    const r = tip.getBoundingClientRect();
+    let left = x + 14, top = y + 16;
+    if (left + r.width > innerWidth - 8) left = innerWidth - r.width - 8;
+    if (top + r.height > innerHeight - 8) top = y - r.height - 12;
+    tip.style.left = Math.max(8, left) + 'px';
+    tip.style.top = Math.max(8, top) + 'px';
+  }
+
+  function show(el, x, y) {
+    const f = FX[+el.dataset.fx];
+    if (!f) return;
+    const b = document.createElement('b');
+    b.textContent = f.en;
+    const s = document.createElement('span');
+    s.textContent = f.d;
+    tip.textContent = '';
+    tip.append(b, s);
+    tip.hidden = false;
+    place(x, y);
+  }
+
+  function hide() { tip.hidden = true; }
+
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('.fx');
+    if (el) { clearTimeout(hideTimer); show(el, e.clientX, e.clientY); }
+    else if (!tip.hidden) hide();
+  });
+  document.addEventListener('mousemove', e => {
+    if (tip.hidden) return;
+    const el = e.target.closest('.fx');
+    if (el) place(e.clientX, e.clientY); else hide();
+  });
+  document.addEventListener('click', e => {
+    const el = e.target.closest('.fx');
+    if (!el) return;
+    show(el, e.clientX, e.clientY);
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(hide, 2600);
+  });
+  addEventListener('scroll', hide, true);
+
+  scan(document.body);
+  let timer = 0;
+  new MutationObserver(() => {
+    clearTimeout(timer);
+    timer = setTimeout(() => scan(document.body), 60);
+  }).observe(document.body, { childList: true, subtree: true });
+
+  document.querySelectorAll('.fx').forEach(el => {
+    if (!el.dataset.fx) return;
+  });
+})();
+</script>
+<script src="bg.js?v=9" defer></script>
 </body>
 </html>

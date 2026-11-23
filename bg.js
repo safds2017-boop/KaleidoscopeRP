@@ -51,6 +51,20 @@
   });
   const WEIGHTS = COLORS.map(c => c[2] || 1);
 
+  function toHsv(c) {
+    const r = c[0], g = c[1], b = c[2];
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    let h = 0;
+    if (d > 1e-6) {
+      if (mx === r) h = ((g - b) / d) % 6;
+      else if (mx === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h /= 6;
+      if (h < 0) h += 1;
+    }
+    return [h, mx > 0 ? d / mx : 0, mx];
+  }
+
   const canvas = document.createElement('canvas');
   canvas.id = 'bg-kaleido';
   canvas.setAttribute('aria-hidden', 'true');
@@ -70,7 +84,7 @@
     slot: 0,
     wait: 45 + Math.random() * 30
   };
-  state.colors = state.picks.map(i => LIST[i].slice());
+  state.colors = state.picks.map(i => toHsv(LIST[i]));
   state.from = state.colors.map(c => c.slice());
   state.to = state.colors.map(c => c.slice());
 
@@ -97,11 +111,26 @@
     return 0;
   }
 
+  function fromHsv(c) {
+    const h = c[0] * 6, s = c[1], v = c[2];
+    const i = Math.floor(h) % 6;
+    const f = h - Math.floor(h);
+    const p = v * (1 - s), q = v * (1 - s * f), t = v * (1 - s * (1 - f));
+    return [[v, t, p], [q, v, p], [p, v, t], [p, q, v], [t, p, v], [v, p, q]][i];
+  }
+
   function pickThree() {
     const idx = [];
     while (idx.length < 3) {
       const i = pickWeighted(idx);
       if (idx.indexOf(i) < 0) idx.push(i);
+    }
+    if (Math.max(idx.map(i => toHsv(LIST[i])[1])) < 0.22) {
+      let guard = 0;
+      while (guard++ < 30) {
+        const i = pickWeighted(idx);
+        if (toHsv(LIST[i])[1] >= 0.3) { idx[0] = i; break; }
+      }
     }
     return idx;
   }
@@ -111,9 +140,11 @@
       state.morph = Math.min(1, state.morph + dt / 13);
       const k = state.morph * state.morph * (3 - 2 * state.morph);
       for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-          state.colors[i][j] = state.from[i][j] + (state.to[i][j] - state.from[i][j]) * k;
-        }
+        let dh = state.to[i][0] - state.from[i][0];
+        dh -= Math.floor(dh + 0.5);
+        state.colors[i][0] = (state.from[i][0] + dh * k + 1) % 1;
+        state.colors[i][1] = state.from[i][1] + (state.to[i][1] - state.from[i][1]) * k;
+        state.colors[i][2] = state.from[i][2] + (state.to[i][2] - state.from[i][2]) * k;
       }
       return;
     }
@@ -122,9 +153,14 @@
     state.from = state.colors.map(c => c.slice());
     state.to = state.colors.map(c => c.slice());
     state.slot = (state.slot + 1) % 3;
-    const j = pickWeighted(state.picks);
+    let j = pickWeighted(state.picks);
     state.picks[state.slot] = j;
-    state.to[state.slot] = LIST[j];
+    let guard = 0;
+    while (Math.max.apply(null, state.picks.map(i => toHsv(LIST[i])[1])) < 0.22 && guard++ < 30) {
+      j = pickWeighted(state.picks);
+      if (toHsv(LIST[j])[1] >= 0.3) state.picks[state.slot] = j;
+    }
+    state.to[state.slot] = toHsv(LIST[j]);
     state.morph = 0;
     state.wait = 30 + Math.random() * 24;
   }
@@ -137,9 +173,9 @@
     const FS = `
       uniform vec2 uRes;
       uniform float uTime;
-      uniform vec3 uC1;
-      uniform vec3 uC2;
-      uniform vec3 uC3;
+      uniform vec3 uH1;
+      uniform vec3 uH2;
+      uniform vec3 uH3;
       uniform vec2 uSeed;
       uniform float uSectors;
       uniform float uRot;
@@ -171,6 +207,19 @@
         return v;
       }
 
+      vec3 hsv2rgb(vec3 c){
+        vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
+        return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y);
+      }
+      vec3 mixHSV(vec3 a, vec3 b, float t){
+        float dh = b.x - a.x;
+        dh -= floor(dh + 0.5);
+        float h = a.x + dh * t;
+        if (a.y < 0.08) h = b.x;
+        if (b.y < 0.08) h = a.x;
+        return vec3(fract(h), mix(a.y, b.y, t), mix(a.z, b.z, t));
+      }
+
       void main(){
         float side = min(uRes.x, uRes.y);
         vec2 base = (gl_FragCoord.xy - vec2(uRes.x * 0.35, uRes.y * 0.42)) / side;
@@ -192,13 +241,20 @@
         n += 0.05 * sin(rr * 22.0 - t * 1.2);
         n = clamp(n, 0.0, 1.0);
 
-        vec3 col = mix(uC1 * 0.6, uC1, smoothstep(0.0, 0.42, n));
-        col = mix(col, uC2, smoothstep(0.12, 0.72, n));
-        col = mix(col, uC3, smoothstep(0.42, 1.0, n));
+        vec3 hsv = mixHSV(vec3(uH1.x, uH1.y, uH1.z * 0.78), uH1, smoothstep(0.0, 0.42, n));
+        hsv = mixHSV(hsv, uH2, smoothstep(0.12, 0.72, n));
+        hsv = mixHSV(hsv, uH3, smoothstep(0.42, 1.0, n));
+        vec3 col = hsv2rgb(hsv);
         col *= 0.95 + 0.06 * sin(n * 5.0 + rr * 1.5);
 
-        float alpha = smoothstep(0.1, 0.72, n) * 0.75;
+        float alpha = smoothstep(0.04, 0.62, n) * 0.8;
         alpha *= smoothstep(1.4, 0.5, r);
+
+        vec2 vuv = gl_FragCoord.xy / uRes - 0.5;
+        float vd = length(vuv) / 0.70710678;
+        float vdark = 0.5 * smoothstep(0.0, 0.62, vd) + 0.42 * smoothstep(0.62, 1.0, vd);
+        col = mix(col, vec3(0.05, 0.06, 0.08), vdark);
+
         gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0) * 0.5);
       }
     `;
@@ -230,7 +286,7 @@
     }
     gl.useProgram(prog);
 
-    const uC = [1, 2, 3].map(i => gl.getUniformLocation(prog, 'uC' + i));
+    const uC = [1, 2, 3].map(i => gl.getUniformLocation(prog, 'uH' + i));
     const uRes = gl.getUniformLocation(prog, 'uRes');
     const uTime = gl.getUniformLocation(prog, 'uTime');
 
@@ -353,7 +409,7 @@
     }
 
     function render(t) {
-      const c0 = state.colors[0], c1 = state.colors[1], c2 = state.colors[2];
+      const c0 = fromHsv(state.colors[0]), c1 = fromHsv(state.colors[1]), c2 = fromHsv(state.colors[2]);
       const grad = [
         c0.map(v => v * 0.5),
         c0,
