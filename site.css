@@ -57,6 +57,7 @@ p{margin:0 0 14px;color:#c3cddb}
 .lore h2{margin-top:34px}
 .lore h3{margin-top:24px}
 .lore p{color:#c3cddb}
+.lore .footnote{font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:10px;margin-top:14px}
 .quote{border-left:3px solid var(--acc);background:var(--panel);border-radius:0 10px 10px 0;padding:14px 16px;color:#c3cddb;font-style:italic;margin:0 0 18px}
 .list{margin:0 0 16px;padding-left:20px;color:#c3cddb}
 .list li{margin-bottom:8px}
