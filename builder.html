@@ -125,6 +125,7 @@ body.locked{overflow:hidden}
       <a href="lore.html">Лор</a>
       <a href="gameplay.html">Геймплей</a>
       <a href="mods.html">Сборка</a>
+      <a href="rules.html">Правила</a>
     </nav>
   </div>
 </header>
@@ -205,7 +206,7 @@ body.locked{overflow:hidden}
 <div class="toast" id="toast"></div>
 <div id="fx-tip" class="fx-tip" hidden></div>
 
-<script src="data.js?v=6"></script>
+<script src="data.js?v=7"></script>
 <script>
 const $ = s => document.querySelector(s);
 const byName = (list, name) => list.find(x => x.name === name);
@@ -789,7 +790,9 @@ function renderSecrets() {
       const mod = document.createElement('p');
       mod.className = 'secret-mod';
       mod.textContent = 'Учтено в расчёте: ' + s.mods
-        .map(m => CHANNELS[m.ch].label + ' ' + (m.flat > 0 ? '+' : '') + m.flat)
+        .map(m => CHANNELS[m.ch].label + ' ' + (m.flat != null
+          ? (m.flat > 0 ? '+' : '') + m.flat
+          : (m.pct > 0 ? '+' : '') + m.pct + '%'))
         .join(', ');
       body.append(mod);
     }
@@ -941,6 +944,7 @@ update();
     { en: 'Weakness', d: '\u0421\u043b\u0430\u0431\u043e\u0441\u0442\u044c: \u0443\u0440\u043e\u043d \u0430\u0442\u0430\u043a\u0438 \u043d\u0438\u0436\u0435 \u043d\u0430 4 \u0437\u0430 \u0443\u0440\u043e\u0432\u0435\u043d\u044c.', re: '\u0441\u043b\u0430\u0431\u043e\u0441\u0442[\u0430-\u044f\u0451]*' },
     { en: 'Mining Fatigue', d: '\u0423\u0442\u043e\u043c\u043b\u0435\u043d\u0438\u0435: \u043a\u043e\u043f\u0430\u043d\u0438\u0435 \u0438 \u0430\u0442\u0430\u043a\u0430 \u043c\u0435\u0434\u043b\u0435\u043d\u043d\u0435\u0435.', re: '\u0443\u0442\u043e\u043c\u043b\u0435\u043d\u0438[\u0430-\u044f\u0451]*' },
     { en: 'Nausea', d: '\u0422\u043e\u0448\u043d\u043e\u0442\u0430: \u0438\u0441\u043a\u0430\u0436\u0430\u0435\u0442 \u0438\u0437\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u0438\u0435.', re: '\u0442\u043e\u0448\u043d\u043e\u0442[\u0430-\u044f\u0451]*' },
+    { en: 'Hunger', d: 'Голод: шкала сытости падает быстрее, из-за чего здоровье перестаёт восстанавливаться.', re: 'голод(?:а|у)?(?=[,]?\\s+(?:и\\s+)?тошнот)' },
     { en: 'Regeneration', d: '\u0420\u0435\u0433\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f: \u0437\u0434\u043e\u0440\u043e\u0432\u044c\u0435 \u0432\u043e\u0441\u0441\u0442\u0430\u043d\u0430\u0432\u043b\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u0441\u043e \u0432\u0440\u0435\u043c\u0435\u043d\u0435\u043c.', re: '\u0440\u0435\u0433\u0435\u043d\u0435\u0440\u0430\u0446\u0438[\u0430-\u044f\u0451]*' },
     { en: 'Invisibility', d: '\u041d\u0435\u0432\u0438\u0434\u0438\u043c\u043e\u0441\u0442\u044c: \u0432\u0430\u0441 \u043d\u0435 \u0432\u0438\u0434\u043d\u043e; \u0431\u0440\u043e\u043d\u044f \u0438 \u043f\u0440\u0435\u0434\u043c\u0435\u0442\u044b \u0432 \u0440\u0443\u043a\u0430\u0445 \u043e\u0441\u0442\u0430\u044e\u0442\u0441\u044f \u0437\u0430\u043c\u0435\u0442\u043d\u044b\u043c\u0438.', re: '\u043d\u0435\u0432\u0438\u0434\u0438\u043c\u043e\u0441\u0442[\u0430-\u044f\u0451]*' },
     { en: 'Wither', d: '\u0418\u0441\u0441\u0443\u0448\u0435\u043d\u0438\u0435: \u043f\u0435\u0440\u0438\u043e\u0434\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u0443\u0440\u043e\u043d, \u043b\u0435\u0447\u0435\u043d\u0438\u0435 \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442 \u0445\u0443\u0436\u0435.', re: '\u0438\u0441\u0441\u0443\u0448\u0435\u043d\u0438[\u0430-\u044f\u0451]*' },
@@ -963,6 +967,7 @@ update();
       let idx = -1;
       for (let i = 0; i < FX.length; i++) if (m[i + 1] !== undefined) { idx = i; break; }
       if (idx < 0) continue;
+      if (/^\s+к(?=\s|$)/.test(text.slice(m.index + m[0].length))) continue;
       if (!frag) frag = document.createDocumentFragment();
       if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
       const span = document.createElement('span');

@@ -736,11 +736,13 @@ const SECRETS = [
     stars: 3,
     combo: [
       { type: 'nature', name: 'Обычное тело' },
-      { type: 'passive', name: 'Магическое естество' }
+      { type: 'passive', name: 'Магическое естество' },
+      { type: 'passive', name: 'Особое тело' }
     ],
-    effect: 'Магическое естество на 7 заклинаний. Активных способностей нет — только минорные усиления.',
-    strikes: [{ ability: 'Магическое естество', whole: true }],
-    rule: { noActives: true, maxMinors: 2 }
+    effect: 'Магическое естество на 7 заклинаний. Активных способностей нет — только минорные усиления. −20% получаемого урона. Нельзя носить броню выше железной.',
+    strikes: [{ ability: 'Магическое естество', whole: true }, { ability: 'Особое тело', whole: true }],
+    rule: { noActives: true, maxMinors: 2 },
+    mods: [{ ch: 'dmgIn', pct: -20 }]
   },
   {
     name: 'Легенда о Карпе',
