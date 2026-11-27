@@ -135,3 +135,7 @@ p{margin:0 0 14px;color:#c3cddb}
 .race-pane ul li{margin-bottom:6px}
 
 .race-pane .race-sub{font-size:26px;margin:34px 0 14px;padding-top:18px;border-top:1px solid var(--line);letter-spacing:-.3px}
+
+.race-note{color:var(--mut);margin:0 0 4px;max-width:820px}
+.race-note a{color:var(--acc2);text-decoration:none}
+.race-note a:hover{text-decoration:underline}
