@@ -56,7 +56,6 @@ p{margin:0 0 14px;color:#c3cddb}
 .big-btn h3{font-size:23px;margin:8px 0 6px;line-height:1.2;color:var(--txt)}
 .big-btn p{margin:0;color:var(--mut);font-size:14px}
 .big-btn .go{margin-top:auto;padding-top:14px;color:var(--acc2);font-size:14px}
-.big-btn.wide{grid-column:1/-1;min-height:0}
 @media(max-width:640px){.big-buttons{grid-template-columns:1fr}.big-btn{min-height:0}}
 .lore h2{margin-top:34px}
 .lore h3{margin-top:24px}
@@ -109,3 +108,30 @@ p{margin:0 0 14px;color:#c3cddb}
   100%{background:var(--panel);border-color:var(--line);box-shadow:0 0 0 1px var(--line)}
 }
 .change.flash{animation:change-flash 1.3s ease-out 1}
+
+.races{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;margin-top:18px;align-items:start}
+.race-list{display:flex;flex-direction:column;gap:5px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:8px;position:sticky;top:72px}
+.race-item{text-align:left;font:inherit;font-size:14px;color:var(--txt);background:transparent;border:0;border-radius:9px;padding:9px 12px;cursor:pointer;transition:background .12s,color .12s}
+.race-item:hover{background:var(--panel2)}
+.race-item.on{background:#20293a;color:var(--acc2);box-shadow:inset 2px 0 0 var(--acc)}
+.race-pane{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--panel2),var(--panel));padding:24px 26px;min-height:340px}
+.race-pane h2{font-size:28px;margin:0 0 14px}
+.race-pane p{color:#c3cddb;margin:0 0 12px}
+.race-pane p:last-child{margin-bottom:0}
+@media(max-width:760px){
+.races{grid-template-columns:1fr;gap:12px}
+.race-list{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;position:static;padding:6px}
+.race-item{white-space:nowrap}
+.race-pane{min-height:0;padding:20px 18px}
+}
+
+.race-author{font-size:13px;color:var(--mut);margin:-6px 0 4px}
+.race-contact{font-size:14px;color:#c3cddb;margin:0 0 18px}
+.race-contact a{color:var(--acc2);text-decoration:none}
+.race-contact a:hover{text-decoration:underline}
+.race-pane h3{font-size:19px;margin:22px 0 8px;color:var(--txt)}
+.race-pane h3:first-child{margin-top:0}
+.race-pane ul{margin:0 0 12px;padding-left:20px;color:#c3cddb}
+.race-pane ul li{margin-bottom:6px}
+
+.race-pane .race-sub{font-size:26px;margin:34px 0 14px;padding-top:18px;border-top:1px solid var(--line);letter-spacing:-.3px}
